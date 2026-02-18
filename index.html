@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Si-3.26 Аналитик | MOEX Real-Time</title>
+    <title>Si-3.26 Аналитик | MOEX Real-Time Fix</title>
     <script src="https://unpkg.com/lightweight-charts@4.0.1/dist/lightweight-charts.standalone.production.js"></script>
     <style>
         :root {
@@ -15,28 +15,23 @@
             --buy: #238636;
             --sell: #f85149;
             --live: #3fb950;
+            --warning: #f0883e;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--bg);
             color: var(--text);
             padding: 12px;
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
 
         h2 {
             text-align: center;
             font-size: clamp(1.2rem, 5vw, 1.8rem);
-            margin: 0 0 12px 0;
+            margin-bottom: 12px;
             font-weight: 500;
         }
 
@@ -55,7 +50,6 @@
             border-radius: 20px;
             padding: 16px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            position: relative;
         }
 
         #chart {
@@ -72,7 +66,6 @@
             gap: 8px;
             margin-bottom: 16px;
             flex-wrap: wrap;
-            justify-content: flex-start;
             border-bottom: 1px solid var(--border);
             padding-bottom: 12px;
         }
@@ -88,9 +81,6 @@
             cursor: pointer;
             transition: all 0.2s;
             opacity: 0.7;
-            white-space: nowrap;
-            min-width: 50px;
-            text-align: center;
         }
 
         .tf-btn.active {
@@ -125,469 +115,73 @@
             height: 8px;
             background: var(--live);
             border-radius: 50%;
-            animation: pulse-live 1.5s infinite;
+            animation: pulse 1.5s infinite;
         }
 
-        @keyframes pulse-live {
+        .live-dot.warning {
+            background: var(--warning);
+            animation: none;
+        }
+
+        @keyframes pulse {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.5; transform: scale(0.8); }
         }
 
-        .notification-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-width: 400px;
-        }
-
-        .notification {
-            background: var(--card);
-            border: 2px solid var(--border);
-            border-radius: 16px;
-            padding: 16px 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-            animation: slideIn 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .notification:hover {
-            transform: translateX(-5px);
-        }
-
-        .notification.buy {
-            border-color: var(--buy);
-            background: rgba(35, 134, 54, 0.15);
-        }
-
-        .notification.sell {
-            border-color: var(--sell);
-            background: rgba(248, 81, 73, 0.15);
-        }
-
-        .notification-icon {
-            font-size: 32px;
-        }
-
-        .notification-content {
-            flex: 1;
-        }
-
-        .notification-title {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .notification-text {
-            font-size: 12px;
-            color: #8b949e;
-        }
-
-        .notification-close {
-            background: none;
-            border: none;
-            color: var(--text);
-            font-size: 20px;
-            cursor: pointer;
-            padding: 0;
-            width: 24px;
-            height: 24px;
+        .status-bar {
             display: flex;
             align-items: center;
             justify-content: center;
-            opacity: 0.7;
-        }
-
-        .notification-close:hover {
-            opacity: 1;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        .calendar-container {
-            margin-top: 16px;
-            max-height: 350px;
-            overflow-y: auto;
-        }
-
-        .calendar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .calendar-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--accent);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .calendar-badge {
-            background: var(--accent);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-        }
-
-        .calendar-item {
-            background: #0d1117;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 8px;
-            transition: all 0.2s;
-            cursor: pointer;
-            border-left: 3px solid transparent;
-        }
-
-        .calendar-item:hover {
-            border-color: var(--accent);
-        }
-
-        .calendar-item.high { border-left-color: var(--sell); }
-        .calendar-item.medium { border-left-color: #f0883e; }
-        .calendar-item.low { border-left-color: #58a6ff; }
-
-        .calendar-time {
-            font-size: 12px;
-            color: #8b949e;
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .calendar-country {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            background: #21262d;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-        }
-
-        .calendar-event {
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 6px;
-            line-height: 1.4;
-        }
-
-        .calendar-values {
-            display: flex;
-            gap: 12px;
-            font-size: 12px;
+            gap: 16px;
             margin-top: 8px;
-        }
-
-        .calendar-value {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .calendar-value-label {
-            color: #8b949e;
-            font-size: 10px;
-            text-transform: uppercase;
-        }
-
-        .calendar-value-num {
-            font-weight: 600;
-            font-family: 'Courier New', monospace;
-        }
-
-        .calendar-impact {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: 600;
-            margin-top: 6px;
-        }
-
-        .impact-high { background: rgba(248, 81, 73, 0.2); color: var(--sell); }
-        .impact-medium { background: rgba(240, 136, 62, 0.2); color: #f0883e; }
-        .impact-low { background: rgba(88, 166, 255, 0.2); color: #58a6ff; }
-
-        .calendar-filter {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
+            font-size: 12px;
             flex-wrap: wrap;
         }
 
-        .filter-btn {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text);
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .filter-btn.active {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: white;
-        }
-
-        .filter-btn:hover {
-            border-color: var(--accent);
-        }
-
-        .news-container {
-            margin-top: 16px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .news-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .news-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--accent);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .news-badge {
-            background: var(--accent);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-        }
-
-        .news-item {
-            background: #0d1117;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 8px;
-            transition: all 0.2s;
-            cursor: pointer;
-            border-left: 3px solid transparent;
-        }
-
-        .news-item:hover {
-            border-color: var(--accent);
-        }
-
-        .news-item.high { border-left-color: var(--sell); }
-        .news-item.medium { border-left-color: #f0883e; }
-        .news-item.low { border-left-color: #58a6ff; }
-
-        .news-time {
-            font-size: 11px;
-            color: #8b949e;
-            margin-bottom: 4px;
-        }
-
-        .news-text {
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        .news-source {
-            font-size: 10px;
-            color: var(--accent);
-            margin-top: 4px;
-        }
-
-        .news-sentiment {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: 600;
-            margin-top: 6px;
-        }
-
-        .sentiment-bullish { background: rgba(35, 134, 54, 0.2); color: #3fb950; }
-        .sentiment-bearish { background: rgba(248, 81, 73, 0.2); color: var(--sell); }
-        .sentiment-neutral { background: rgba(139, 148, 158, 0.2); color: #8b949e; }
-
-        .influence-panel {
             background: #0d1117;
             border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 16px;
             border: 1px solid var(--border);
         }
 
-        .influence-title {
-            font-size: 12px;
-            color: #8b949e;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .status-item.online { border-color: var(--live); color: var(--live); }
+        .status-item.warning { border-color: var(--warning); color: var(--warning); }
+        .status-item.error { border-color: var(--sell); color: var(--sell); }
 
-        .influence-bars {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .influence-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .influence-label {
-            font-size: 11px;
-            min-width: 80px;
-            color: #8b949e;
-        }
-
-        .influence-bar {
-            flex: 1;
-            height: 8px;
-            background: #21262d;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .influence-fill {
-            height: 100%;
-            border-radius: 4px;
-            transition: width 0.5s ease;
-        }
-
-        .influence-fill.bullish { background: linear-gradient(90deg, #238636, #3fb950); }
-        .influence-fill.bearish { background: linear-gradient(90deg, #f85149, #ff7b72); }
-        .influence-fill.neutral { background: linear-gradient(90deg, #484f58, #8b949e); }
-
-        .influence-value {
-            font-size: 11px;
-            font-weight: 600;
-            min-width: 40px;
-            text-align: right;
-        }
-
-        .signal-history {
-            margin-top: 16px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .signal-history-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--accent);
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .signal-history-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .delay-warning {
+            background: rgba(240, 136, 62, 0.2);
+            border: 1px solid var(--warning);
+            color: var(--warning);
             padding: 8px 12px;
-            background: #0d1117;
             border-radius: 8px;
-            margin-bottom: 6px;
             font-size: 12px;
-            border-left: 3px solid transparent;
+            margin-top: 8px;
+            text-align: center;
+            display: none;
         }
 
-        .signal-history-item.buy { border-left-color: var(--buy); }
-        .signal-history-item.sell { border-left-color: var(--sell); }
-        .signal-history-item.hold { border-left-color: #8b949e; }
+        .delay-warning.visible { display: block; }
 
-        .signal-history-time {
-            color: #8b949e;
-            min-width: 60px;
-        }
-
-        .signal-history-signal {
-            font-weight: 600;
-            min-width: 80px;
-        }
-
-        .signal-history-price {
-            color: #8b949e;
-        }
-
-        .settings-row {
+        .price-ticker {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .settings-label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-        }
-
-        .toggle-switch {
-            position: relative;
-            width: 44px;
-            height: 24px;
-            background: #21262d;
+            justify-content: space-around;
+            margin: 12px 0;
+            padding: 12px;
+            background: #0d1117;
             border-radius: 12px;
-            cursor: pointer;
-            transition: background 0.3s;
+            border: 1px solid var(--border);
         }
 
-        .toggle-switch.active {
-            background: var(--accent);
-        }
-
-        .toggle-switch::after {
-            content: '';
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 20px;
-            height: 20px;
-            background: white;
-            border-radius: 50%;
-            transition: transform 0.3s;
-        }
-
-        .toggle-switch.active::after {
-            transform: translateX(20px);
-        }
+        .ticker-item { text-align: center; }
+        .ticker-label { font-size: 11px; color: #8b949e; text-transform: uppercase; margin-bottom: 4px; }
+        .ticker-value { font-size: 20px; font-weight: 700; font-family: monospace; }
+        .ticker-change { font-size: 12px; margin-top: 2px; }
+        .positive { color: #3fb950; }
+        .negative { color: #f85149; }
 
         .signal-display {
             text-align: center;
@@ -598,22 +192,9 @@
             transition: all 0.3s;
         }
 
-        .signal-display.buy {
-            border-color: var(--buy);
-            color: #3fb950;
-            background: rgba(35, 134, 54, 0.15);
-        }
-
-        .signal-display.sell {
-            border-color: var(--sell);
-            color: var(--sell);
-            background: rgba(248, 81, 73, 0.15);
-        }
-
-        .signal-display.hold {
-            border-color: #8b949e;
-            color: #8b949e;
-        }
+        .signal-display.buy { border-color: var(--buy); color: #3fb950; background: rgba(35, 134, 54, 0.15); }
+        .signal-display.sell { border-color: var(--sell); color: var(--sell); background: rgba(248, 81, 73, 0.15); }
+        .signal-display.hold { border-color: #8b949e; color: #8b949e; }
 
         .auto-update-row {
             display: flex;
@@ -625,14 +206,6 @@
             border-bottom: 1px solid var(--border);
         }
 
-        .auto-update-label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
         .timer {
             background: #21262d;
             padding: 4px 12px;
@@ -640,24 +213,6 @@
             font-size: 13px;
             font-weight: 600;
             font-family: monospace;
-        }
-
-        input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            accent-color: var(--accent);
-            cursor: pointer;
-        }
-
-        input, textarea {
-            width: 100%;
-            padding: 12px;
-            background: #0d1117;
-            color: white;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            margin-top: 8px;
-            font-size: 16px;
         }
 
         button {
@@ -674,35 +229,15 @@
             transition: all 0.2s;
         }
 
-        button:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-
-        button:active {
-            opacity: 0.8;
-            transform: scale(0.98);
-        }
-
-        button.small {
-            background: #21262d;
-            padding: 10px;
-            font-size: 14px;
-            margin-top: 8px;
-        }
-
-        button.small.active {
-            background: var(--accent);
-        }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        button.small { background: #21262d; padding: 10px; font-size: 14px; margin-top: 8px; }
+        button.small.active { background: var(--accent); }
 
         .info {
             font-size: 13px;
             color: #8b949e;
             margin: 10px 0 0;
-            word-break: break-word;
             line-height: 1.5;
-            max-height: 200px;
-            overflow-y: auto;
         }
 
         #loading {
@@ -732,172 +267,23 @@
             animation: spin 1s linear infinite;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        .last-update {
-            text-align: center;
-            font-size: 12px;
-            color: #8b949e;
-            margin-top: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .price-ticker {
-            display: flex;
-            justify-content: space-around;
-            margin: 12px 0;
-            padding: 12px;
-            background: #0d1117;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-        }
-
-        .ticker-item {
-            text-align: center;
-        }
-
-        .ticker-label {
+        .debug-info {
+            font-family: monospace;
             font-size: 11px;
             color: #8b949e;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-        }
-
-        .ticker-value {
-            font-size: 20px;
-            font-weight: 700;
-            font-family: 'Courier New', monospace;
-        }
-
-        .ticker-change {
-            font-size: 12px;
-            margin-top: 2px;
-        }
-
-        .positive { color: #3fb950; }
-        .negative { color: #f85149; }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .stat-item {
             background: #0d1117;
-            padding: 10px;
+            padding: 8px;
             border-radius: 8px;
-            font-size: 12px;
-            border: 1px solid var(--border);
-        }
-
-        .stat-label {
-            color: #8b949e;
-            font-size: 11px;
-            margin-bottom: 4px;
-        }
-
-        .stat-value {
-            color: var(--text);
-            font-weight: 600;
-            font-size: 13px;
-        }
-
-        .analysis-summary {
-            background: #0d1117;
-            border-radius: 12px;
-            padding: 12px;
-            margin-top: 12px;
-            border: 1px solid var(--border);
-        }
-
-        .analysis-title {
-            font-size: 12px;
-            color: var(--accent);
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .analysis-factors {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .factor-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-        }
-
-        .factor-icon {
-            font-size: 14px;
-        }
-
-        .factor-text {
-            flex: 1;
-            color: #8b949e;
-        }
-
-        .factor-score {
-            font-weight: 600;
-            min-width: 30px;
-            text-align: right;
-        }
-
-        .factor-score.positive { color: #3fb950; }
-        .factor-score.negative { color: #f85149; }
-        .factor-score.neutral { color: #8b949e; }
-
-        .connection-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 11px;
-            padding: 4px 8px;
-            border-radius: 12px;
-            background: #21262d;
-        }
-
-        .connection-status.online {
-            background: rgba(35, 134, 54, 0.2);
-            color: #3fb950;
-        }
-
-        .connection-status.offline {
-            background: rgba(248, 81, 73, 0.2);
-            color: #f85149;
-        }
-
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: currentColor;
-        }
-
-        .update-info {
-            font-size: 10px;
-            color: #8b949e;
-            text-align: center;
-            margin-top: 4px;
+            margin-top: 8px;
+            max-height: 100px;
+            overflow-y: auto;
         }
 
         @media (max-width: 1100px) {
             .grid { grid-template-columns: 1fr; }
             #chart { height: 350px; }
-            .notification-container {
-                left: 10px;
-                right: 10px;
-                max-width: none;
-            }
         }
 
         @media (max-width: 600px) {
@@ -909,112 +295,58 @@
     </style>
 </head>
 <body>
-    <div class="notification-container" id="notificationContainer"></div>
-
     <h2>
         Анализ Si-3.26 (H6) 
-        <span class="live-indicator">
-            <span class="live-dot"></span>
-            LIVE
+        <span class="live-indicator" id="liveIndicator">
+            <span class="live-dot" id="liveDot"></span>
+            <span id="liveText">LIVE</span>
         </span>
     </h2>
 
     <div class="grid">
-        <div class="card" id="chartContainer">
+        <div class="card">
             <div class="timeframe-selector" id="tfSelector">
                 <button class="tf-btn" data-tf="1" type="button">M1</button>
                 <button class="tf-btn" data-tf="10" type="button">M10</button>
                 <button class="tf-btn active" data-tf="60" type="button">1H</button>
                 <button class="tf-btn" data-tf="240" type="button">4H</button>
                 <button class="tf-btn" data-tf="1440" type="button">1D</button>
-                <button class="tf-btn" data-tf="10080" type="button">1W</button>
             </div>
+            
             <div id="chart">
-                <div id="loading"><div class="spinner"></div> Подключение к MOEX...</div>
+                <div id="loading"><div class="spinner"></div> Загрузка...</div>
             </div>
-            <div class="last-update" id="lastUpdate">
-                <span class="connection-status offline" id="connectionStatus">
-                    <span class="status-dot"></span>
+            
+            <div class="status-bar">
+                <div class="status-item" id="statusConnection">
+                    <span>●</span>
                     <span id="statusText">Подключение...</span>
-                </span>
-                <span id="updateTime">-</span>
+                </div>
+                <div class="status-item">
+                    <span>Последняя свеча:</span>
+                    <span id="lastCandleTime">-</span>
+                </div>
+                <div class="status-item">
+                    <span>Задержка:</span>
+                    <span id="delayTime">-</span>
+                </div>
+                <div class="status-item">
+                    <span>Обновление:</span>
+                    <span id="updateTime">-</span>
+                </div>
             </div>
-            <div class="update-info" id="updateInfo">Обновление каждые 30 секунд</div>
-
-            <div class="influence-panel" id="influencePanel">
-                <div class="influence-title">
-                    <span>📊 Комплексный анализ факторов</span>
-                </div>
-                <div class="influence-bars">
-                    <div class="influence-row">
-                        <span class="influence-label">Технический</span>
-                        <div class="influence-bar">
-                            <div class="influence-fill neutral" id="techBar" style="width: 50%"></div>
-                        </div>
-                        <span class="influence-value" id="techScore">0</span>
-                    </div>
-                    <div class="influence-row">
-                        <span class="influence-label">Новости</span>
-                        <div class="influence-bar">
-                            <div class="influence-fill neutral" id="newsBar" style="width: 50%"></div>
-                        </div>
-                        <span class="influence-value" id="newsScore">0</span>
-                    </div>
-                    <div class="influence-row">
-                        <span class="influence-label">Календарь</span>
-                        <div class="influence-bar">
-                            <div class="influence-fill neutral" id="calendarBar" style="width: 50%"></div>
-                        </div>
-                        <span class="influence-value" id="calendarScore">0</span>
-                    </div>
-                    <div class="influence-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
-                        <span class="influence-label" style="font-weight: 600; color: var(--text);">ИТОГО</span>
-                        <div class="influence-bar">
-                            <div class="influence-fill neutral" id="totalBar" style="width: 50%"></div>
-                        </div>
-                        <span class="influence-value" id="totalScore" style="font-weight: 700;">0</span>
-                    </div>
-                </div>
+            
+            <div class="delay-warning" id="delayWarning">
+                ⚠️ Данные отстают на <span id="delayMinutes">0</span> минут! 
+                MOEX API ограничивает бесплатный доступ.
             </div>
 
-            <div class="calendar-container" id="calendarContainer">
-                <div class="calendar-header">
-                    <div class="calendar-title">
-                        <span>📅 Экономический календарь</span>
-                        <span class="calendar-badge" id="calendarCount">0</span>
-                    </div>
-                    <button class="small" onclick="refreshCalendar()" style="width: auto; padding: 6px 12px; margin: 0;">🔄</button>
-                </div>
-                <div class="calendar-filter">
-                    <button class="filter-btn active" onclick="filterCalendar('all')">Все</button>
-                    <button class="filter-btn" onclick="filterCalendar('high')">🔴 Важные</button>
-                    <button class="filter-btn" onclick="filterCalendar('medium')">🟡 Средние</button>
-                    <button class="filter-btn" onclick="filterCalendar('usd')">💵 USD</button>
-                    <button class="filter-btn" onclick="filterCalendar('rub')">🇷🇺 RUB</button>
-                </div>
-                <div id="calendarList">Загрузка календаря...</div>
-            </div>
-
-            <div class="news-container" id="newsContainer">
-                <div class="news-header">
-                    <div class="news-title">
-                        <span>📰 Новостной фон</span>
-                        <span class="news-badge" id="newsCount">0</span>
-                    </div>
-                    <button class="small" onclick="refreshNews()" style="width: auto; padding: 6px 12px; margin: 0;">🔄</button>
-                </div>
-                <div class="calendar-filter">
-                    <button class="filter-btn active" onclick="filterNews('all')">Все</button>
-                    <button class="filter-btn" onclick="filterNews('bullish')">📈 Бычьи</button>
-                    <button class="filter-btn" onclick="filterNews('bearish')">📉 Медвежьи</button>
-                </div>
-                <div id="newsList">Загрузка новостей...</div>
-            </div>
+            <div class="debug-info" id="debugInfo"></div>
         </div>
 
         <div class="side">
             <div class="card">
-                <div class="price-ticker" id="priceTicker">
+                <div class="price-ticker">
                     <div class="ticker-item">
                         <div class="ticker-label">Цена</div>
                         <div class="ticker-value" id="currentPrice">-</div>
@@ -1023,76 +355,37 @@
                     <div class="ticker-item">
                         <div class="ticker-label">Изменение</div>
                         <div class="ticker-value" id="changePercent">-</div>
-                        <div class="ticker-change" id="changeValue">-</div>
                     </div>
                 </div>
 
                 <div id="signal_ui" class="signal-display hold">
                     <div style="font-size: 11px; opacity: 0.7;">ТЕКУЩИЙ СИГНАЛ</div>
                     <div id="signal_text" style="font-size: 26px; font-weight: bold;">ОЖИДАНИЕ</div>
-                    <div id="signal_confidence" style="font-size: 12px; margin-top: 4px; opacity: 0.8;"></div>
-                </div>
-
-                <div id="ai_desc" class="info">Нажмите кнопку для комплексного анализа</div>
-
-                <div class="analysis-summary" id="analysisSummary" style="display: none;">
-                    <div class="analysis-title">📋 Факторы решения</div>
-                    <div class="analysis-factors" id="analysisFactors"></div>
-                </div>
-
-                <div class="stats-grid" id="statsGrid" style="display: none;">
-                    <div class="stat-item"><div class="stat-label">RSI (14)</div><div class="stat-value" id="statRsi">-</div></div>
-                    <div class="stat-item"><div class="stat-label">MACD</div><div class="stat-value" id="statMacd">-</div></div>
-                    <div class="stat-item"><div class="stat-label">EMA 20/50</div><div class="stat-value" id="statEma">-</div></div>
-                    <div class="stat-item"><div class="stat-label">Тренд</div><div class="stat-value" id="statTrend">-</div></div>
                 </div>
 
                 <div class="auto-update-row">
-                    <label class="auto-update-label">
-                        <input type="checkbox" id="autoUpdateCheck" checked> Автообновление (30 сек)
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="autoUpdateCheck" checked> 
+                        Автообновление (10 сек)
                     </label>
-                    <span class="timer" id="timerDisplay">00:30</span>
+                    <span class="timer" id="timerDisplay">00:10</span>
                 </div>
 
-                <button onclick="runComplexAnalysis()" type="button">🧠 КОМПЛЕКСНЫЙ АНАЛИЗ</button>
-                <button class="small" onclick="toggleProxy()" id="proxyBtn" type="button">🔁 CORS-прокси: ВЫКЛ</button>
-                <button class="small" onclick="forceRefresh()" type="button" style="background: var(--buy);">🔄 Обновить сейчас</button>
+                <button onclick="forceRefresh()" type="button">🔄 Обновить данные</button>
+                <button class="small" onclick="testAlternateSource()" type="button">
+                    📡 Проверить альтернативный источник
+                </button>
             </div>
 
             <div class="card" style="margin-top: 16px;">
-                <div style="font-weight: 600; margin-bottom: 12px; color: var(--accent);">🔔 Настройки сигналов</div>
-
-                <div class="settings-row">
-                    <span class="settings-label">🔊 Звуковой сигнал</span>
-                    <div class="toggle-switch active" id="soundToggle" onclick="toggleSetting('sound')"></div>
+                <div class="info">
+                    <strong>Проблема:</strong> MOEX ISS API для бесплатного доступа отдаёт данные с задержкой 15-30 минут во вне торговое время и 2-5 минут в торговое время.
+                    <br><br>
+                    <strong>Решения:</strong><br>
+                    1. Использовать WebSocket подключение (нужен сервер)<br>
+                    2. Парсить данные с терминала Quik/MT5<br>
+                    3. Купить подписку на стриминговые данные MOEX
                 </div>
-
-                <div class="settings-row">
-                    <span class="settings-label">💬 Визуальные уведомления</span>
-                    <div class="toggle-switch active" id="notificationToggle" onclick="toggleSetting('notification')"></div>
-                </div>
-
-                <div class="settings-row" style="border-bottom: none;">
-                    <span class="settings-label">📱 Только важные (BUY/SELL)</span>
-                    <div class="toggle-switch active" id="importantOnlyToggle" onclick="toggleSetting('importantOnly')"></div>
-                </div>
-
-                <button class="small" onclick="testSignal()" style="margin-top: 12px;">🧪 Тест сигнала</button>
-            </div>
-
-            <div class="card" style="margin-top: 16px;">
-                <div class="signal-history-title">📜 История сигналов</div>
-                <div class="signal-history" id="signalHistory">
-                    <div style="text-align: center; color: #8b949e; font-size: 12px; padding: 20px;">
-                        История пуста
-                    </div>
-                </div>
-            </div>
-
-            <div class="card" style="margin-top: 16px;">
-                <label style="font-weight: 500;">🔑 OpenRouter API Key:</label>
-                <input type="password" id="api_key_input" placeholder="sk-or-v1-..." value="">
-                <button style="background: #21262d;" onclick="saveConfig()" type="button">💾 Сохранить ключ</button>
             </div>
         </div>
     </div>
@@ -1102,354 +395,131 @@
         // КОНФИГУРАЦИЯ
         // ============================================
         const CONFIG = {
-            UPDATE_INTERVAL: 30, // секунды
-            TICKER: "SiH6",
-            MAX_RETRIES: 3,
-            RETRY_DELAY: 5000
+            TICKER: 'SiH6',
+            UPDATE_INTERVAL: 10, // секунд - чаще для проверки
+            MAX_DELAY_MINUTES: 5, // максимально допустимая задержка
+            TF_MAP: { 1: 1, 10: 10, 60: 60, 240: 24, 1440: 'D' }
         };
 
         // ============================================
         // СОСТОЯНИЕ
         // ============================================
         const state = {
-            settings: {
-                sound: true,
-                notification: true,
-                importantOnly: true
-            },
-            analysis: {
-                technical: { score: 0, direction: 'neutral', factors: [] },
-                news: { score: 0, direction: 'neutral', items: [] },
-                calendar: { score: 0, direction: 'neutral', events: [] },
-                total: { score: 0, direction: 'neutral' }
-            },
-            chart: {
-                data: [],
-                currentTf: 60,
-                lastCandleTime: 0,
-                instance: null,
-                series: null
-            },
-            ui: {
-                lastSignal: null,
-                signalHistory: [],
-                isConnected: false,
-                useProxy: false,
-                autoUpdate: true,
-                countdown: CONFIG.UPDATE_INTERVAL
-            },
-            data: {
-                news: [],
-                calendar: []
-            }
-        };
-
-        // Маппинг таймфреймов MOEX
-        const TF_MAP = {
-            1: 1,      // 1 минута
-            10: 10,    // 10 минут
-            60: 60,    // 1 час
-            240: 24,   // 4 часа (как дневной в MOEX)
-            1440: 'D', // 1 день
-            10080: 'W' // 1 неделя
+            currentTf: 60,
+            chartData: [],
+            chart: null,
+            series: null,
+            lastUpdate: 0,
+            isTradingHours: false
         };
 
         // ============================================
-        // УТИЛИТЫ
+        // УТИЛИТЫ ВРЕМЕНИ (МОСКВА)
         // ============================================
-        function log(...args) {
-            console.log(`[${new Date().toLocaleTimeString('ru-RU')}]`, ...args);
+        function getMoscowDate() {
+            return new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Moscow" }));
         }
 
-        function formatDate(date) {
-            return date.toISOString().split('T')[0];
-        }
-
-        function getMoscowTime() {
-            return new Date().toLocaleTimeString('ru-RU', { 
+        function formatMoscowTime(date) {
+            return date.toLocaleTimeString('ru-RU', { 
                 timeZone: 'Europe/Moscow',
-                hour12: false 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit'
             });
         }
 
+        function formatMoscowDateTime(date) {
+            return date.toLocaleString('ru-RU', { 
+                timeZone: 'Europe/Moscow',
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit', 
+                minute: '2-digit'
+            });
+        }
+
+        // Проверка торговых часов MOEX (фьючерсы)
+        function checkTradingHours() {
+            const msk = getMoscowDate();
+            const hour = msk.getHours();
+            const day = msk.getDay();
+            
+            // Фьючерсы: 10:00 - 23:50 МСК, пн-пт (день), вс (вечерняя сессия)
+            // Упрощённо: 10:00-23:50
+            const isTrading = day >= 1 && day <= 5 && hour >= 10 && hour < 24;
+            state.isTradingHours = isTrading;
+            return isTrading;
+        }
+
         // ============================================
-        // ЗВУК
+        // ЛОГИРОВАНИЕ
         // ============================================
-        function playSignalSound(type) {
-            if (!state.settings.sound) return;
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                
-                const now = ctx.currentTime;
-                if (type === 'buy') {
-                    osc.frequency.setValueAtTime(523, now);
-                    osc.frequency.setValueAtTime(659, now + 0.1);
-                    gain.gain.setValueAtTime(0.3, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                } else if (type === 'sell') {
-                    osc.frequency.setValueAtTime(659, now);
-                    osc.frequency.setValueAtTime(523, now + 0.1);
-                    gain.gain.setValueAtTime(0.3, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                }
-                
-                osc.start(now);
-                osc.stop(now + 0.3);
-            } catch (e) {
-                log('Audio error:', e);
+        function log(...args) {
+            const time = formatMoscowTime(getMoscowDate());
+            console.log(`[${time}]`, ...args);
+            
+            const debugEl = document.getElementById('debugInfo');
+            const line = `[${time}] ${args.join(' ')}`;
+            debugEl.innerHTML = line + '<br>' + debugEl.innerHTML;
+            if (debugEl.innerHTML.length > 500) {
+                debugEl.innerHTML = debugEl.innerHTML.substring(0, 500);
             }
         }
 
         // ============================================
-        // УВЕДОМЛЕНИЯ
+        // ОСНОВНАЯ ФУНКЦИЯ ЗАГРУЗКИ
         // ============================================
-        function showNotification(signal, price, reason, confidence) {
-            if (state.settings.importantOnly && signal === 'ДЕРЖАТЬ') return;
-
-            const container = document.getElementById('notificationContainer');
-            const icons = { 'ПОКУПКА': '🟢', 'ПРОДАЖА': '🔴', 'ДЕРЖАТЬ': '⏸️' };
-            const titles = { 
-                'ПОКУПКА': 'Сигнал на ПОКУПКУ', 
-                'ПРОДАЖА': 'Сигнал на ПРОДАЖУ', 
-                'ДЕРЖАТЬ': 'Сигнал ДЕРЖАТЬ' 
-            };
-
-            const notif = document.createElement('div');
-            notif.className = `notification ${signal === 'ПОКУПКА' ? 'buy' : signal === 'ПРОДАЖА' ? 'sell' : ''}`;
-            notif.innerHTML = `
-                <div class="notification-icon">${icons[signal]}</div>
-                <div class="notification-content">
-                    <div class="notification-title">${titles[signal]} (${confidence}%)</div>
-                    <div class="notification-text">Цена: ${price.toFixed(2)} | ${reason?.substring(0, 60) || '...'}...</div>
-                </div>
-                <button class="notification-close" onclick="this.parentElement.remove()">×</button>
-            `;
-
-            container.appendChild(notif);
-            playSignalSound(signal === 'ПОКУПКА' ? 'buy' : signal === 'ПРОДАЖА' ? 'sell' : 'hold');
-
-            setTimeout(() => {
-                if (notif.parentElement) {
-                    notif.style.opacity = '0';
-                    notif.style.transform = 'translateX(100%)';
-                    setTimeout(() => notif.remove(), 300);
-                }
-            }, 10000);
-
-            addToHistory(signal, price, confidence);
-        }
-
-        function addToHistory(signal, price, confidence) {
-            const time = getMoscowTime().substring(0, 5);
-            state.ui.signalHistory.unshift({ time, signal, price, confidence });
-            if (state.ui.signalHistory.length > 20) state.ui.signalHistory.pop();
-            updateHistoryUI();
-        }
-
-        function updateHistoryUI() {
-            const container = document.getElementById('signalHistory');
-            if (state.ui.signalHistory.length === 0) {
-                container.innerHTML = '<div style="text-align: center; color: #8b949e; font-size: 12px; padding: 20px;">История пуста</div>';
-                return;
-            }
-            
-            container.innerHTML = state.ui.signalHistory.map(item => `
-                <div class="signal-history-item ${item.signal === 'ПОКУПКА' ? 'buy' : item.signal === 'ПРОДАЖА' ? 'sell' : 'hold'}">
-                    <span class="signal-history-time">${item.time}</span>
-                    <span class="signal-history-signal">${item.signal}</span>
-                    <span class="signal-history-price">${item.price.toFixed(2)}</span>
-                </div>
-            `).join('');
-        }
-
-        // ============================================
-        // ТЕХНИЧЕСКИЙ АНАЛИЗ
-        // ============================================
-        function calculateRSI(prices, period = 14) {
-            if (prices.length < period + 1) return [];
-            const rsi = [];
-            let gains = 0, losses = 0;
-            
-            for (let i = 1; i <= period; i++) {
-                const diff = prices[i] - prices[i-1];
-                if (diff > 0) gains += diff;
-                else losses -= diff;
-            }
-            
-            let avgGain = gains / period;
-            let avgLoss = losses / period;
-            rsi.push(100 - (100 / (1 + avgGain / avgLoss)));
-            
-            for (let i = period + 1; i < prices.length; i++) {
-                const diff = prices[i] - prices[i-1];
-                avgGain = (avgGain * (period - 1) + Math.max(diff, 0)) / period;
-                avgLoss = (avgLoss * (period - 1) + Math.max(-diff, 0)) / period;
-                rsi.push(100 - (100 / (1 + avgGain / avgLoss)));
-            }
-            return rsi;
-        }
-
-        function calculateEMA(prices, period) {
-            const ema = [];
-            const mult = 2 / (period + 1);
-            let sum = prices.slice(0, period).reduce((a, b) => a + b, 0);
-            ema.push(sum / period);
-            
-            for (let i = period; i < prices.length; i++) {
-                ema.push((prices[i] - ema[ema.length-1]) * mult + ema[ema.length-1]);
-            }
-            return ema;
-        }
-
-        function calculateMACD(prices) {
-            const ema12 = calculateEMA(prices, 12);
-            const ema26 = calculateEMA(prices, 26);
-            const macdLine = ema12.slice(-ema26.length).map((v, i) => v - ema26[i]);
-            const signalLine = calculateEMA(macdLine, 9);
-            const histogram = macdLine.slice(-signalLine.length).map((v, i) => v - signalLine[i]);
-            return { macdLine, signalLine, histogram };
-        }
-
-        function analyzeTechnical(data) {
-            if (!data || data.length < 50) {
-                return { score: 0, direction: 'neutral', factors: [], rsi: 50, macd: null, ema20: 0, ema50: 0 };
-            }
-
-            const closes = data.map(d => d.close);
-            const factors = [];
-            let score = 0;
-
-            // RSI
-            const rsi = calculateRSI(closes);
-            const lastRsi = rsi[rsi.length - 1] || 50;
-            
-            if (lastRsi < 30) {
-                score += 30;
-                factors.push({ name: 'RSI перепродан (<30)', score: 30, dir: 'bullish' });
-            } else if (lastRsi > 70) {
-                score -= 30;
-                factors.push({ name: 'RSI перекуплен (>70)', score: -30, dir: 'bearish' });
-            } else if (lastRsi < 45) {
-                score += 10;
-                factors.push({ name: 'RSI близок к перепроданности', score: 10, dir: 'bullish' });
-            } else if (lastRsi > 55) {
-                score -= 10;
-                factors.push({ name: 'RSI близок к перекупленности', score: -10, dir: 'bearish' });
-            }
-
-            // MACD
-            const macd = calculateMACD(closes);
-            const lastMacd = macd.histogram[macd.histogram.length - 1] || 0;
-            const prevMacd = macd.histogram[macd.histogram.length - 2] || 0;
-            
-            if (lastMacd > 0 && prevMacd <= 0) {
-                score += 25;
-                factors.push({ name: 'MACD пересёк ноль вверх', score: 25, dir: 'bullish' });
-            } else if (lastMacd < 0 && prevMacd >= 0) {
-                score -= 25;
-                factors.push({ name: 'MACD пересёк ноль вниз', score: -25, dir: 'bearish' });
-            } else if (lastMacd > 0) {
-                score += 10;
-                factors.push({ name: 'MACD > 0', score: 10, dir: 'bullish' });
-            } else {
-                score -= 10;
-                factors.push({ name: 'MACD < 0', score: -10, dir: 'bearish' });
-            }
-
-            // EMA
-            const ema20 = calculateEMA(closes, 20);
-            const ema50 = calculateEMA(closes, 50);
-            const lastEma20 = ema20[ema20.length - 1] || 0;
-            const lastEma50 = ema50[ema50.length - 1] || 0;
-            const lastPrice = closes[closes.length - 1];
-
-            if (lastEma20 > lastEma50 && lastPrice > lastEma20) {
-                score += 20;
-                factors.push({ name: 'Цена > EMA20 > EMA50', score: 20, dir: 'bullish' });
-            } else if (lastEma20 < lastEma50 && lastPrice < lastEma20) {
-                score -= 20;
-                factors.push({ name: 'Цена < EMA20 < EMA50', score: -20, dir: 'bearish' });
-            }
-
-            // Trend
-            const recent = closes.slice(-10);
-            const up = recent.every((c, i) => i === 0 || c >= recent[i-1] * 0.998);
-            const down = recent.every((c, i) => i === 0 || c <= recent[i-1] * 1.002);
-            
-            if (up) {
-                score += 15;
-                factors.push({ name: 'Восходящий тренд (10 свечей)', score: 15, dir: 'bullish' });
-            } else if (down) {
-                score -= 15;
-                factors.push({ name: 'Нисходящий тренд (10 свечей)', score: -15, dir: 'bearish' });
-            }
-
-            score = Math.max(-100, Math.min(100, score));
-            const direction = score > 20 ? 'bullish' : score < -20 ? 'bearish' : 'neutral';
-
-            return { 
-                score, 
-                direction, 
-                factors, 
-                rsi: lastRsi, 
-                macd, 
-                ema20: lastEma20, 
-                ema50: lastEma50 
-            };
-        }
-
-        // ============================================
-        // MOEX API - КЛЮЧЕВАЯ ФУНКЦИЯ
-        // ============================================
-        
-        /**
-         * ГЛАВНАЯ ФУНКЦИЯ: Загрузка данных с MOEX
-         * Работает на ВСЕХ таймфреймах
-         */
-        async function loadMoexData(timeframe = state.chart.currentTf, isUpdate = false) {
+        async function loadData(timeframe = state.currentTf, force = false) {
             const loadingEl = document.getElementById('loading');
-            const interval = TF_MAP[timeframe];
+            const interval = CONFIG.TF_MAP[timeframe];
             
             if (!interval) {
                 log('Error: Invalid timeframe', timeframe);
                 return;
             }
 
-            if (!isUpdate) loadingEl.style.display = 'flex';
+            if (!force) loadingEl.style.display = 'flex';
 
-            // Рассчитываем период загрузки в зависимости от ТФ
-            let daysBack = 7;
+            // Расчёт периода
+            let daysBack = 3;
             if (timeframe === 1) daysBack = 1;
             else if (timeframe === 10) daysBack = 2;
-            else if (timeframe === 60) daysBack = 14;
-            else if (timeframe === 240) daysBack = 30;
-            else if (timeframe === 1440) daysBack = 90;
-            else if (timeframe === 10080) daysBack = 365;
+            else if (timeframe === 60) daysBack = 7;
+            else if (timeframe === 240) daysBack = 14;
+            else if (timeframe === 1440) daysBack = 30;
 
-            const from = new Date();
+            const from = new Date(getMoscowDate());
             from.setDate(from.getDate() - daysBack);
-            const till = new Date();
-            till.setDate(till.getDate() + 1); // +1 день для получения сегодняшних данных
+            
+            const till = new Date(getMoscowDate());
+            till.setDate(till.getDate() + 1);
 
-            const url = `https://iss.moex.com/iss/engines/futures/markets/forts/securities/${CONFIG.TICKER}/candles.json?interval=${interval}&from=${formatDate(from)}&till=${formatDate(till)}`;
+            // КЛЮЧЕВОЕ: Добавляем timestamp для обхода кэша
+            const cacheBuster = Date.now();
+            const url = `https://iss.moex.com/iss/engines/futures/markets/forts/securities/${CONFIG.TICKER}/candles.json?interval=${interval}&from=${formatDate(from)}&till=${formatDate(till)}&_=${cacheBuster}`;
 
-            log('Fetching MOEX data:', { timeframe, interval, url: url.substring(0, 80) + '...' });
+            log('Fetching:', { timeframe, interval, url: url.substring(0, 60) + '...' });
 
             try {
-                const response = await fetch(url);
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache'
+                    }
+                });
+
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
+
                 const data = await response.json();
                 
                 if (!data.candles?.data?.length) {
-                    throw new Error('No data from MOEX');
+                    throw new Error('No data in response');
                 }
 
-                // Парсим данные
+                // Парсинг
                 const cols = data.candles.columns;
                 const idx = {
                     open: cols.indexOf('open'),
@@ -1457,243 +527,185 @@
                     high: cols.indexOf('high'),
                     low: cols.indexOf('low'),
                     begin: cols.indexOf('begin'),
-                    volume: cols.indexOf('volume')
+                    end: cols.indexOf('end')
                 };
 
                 const parsed = data.candles.data.map(c => ({
                     time: Math.floor(new Date(c[idx.begin]).getTime() / 1000),
+                    timeEnd: c[idx.end],
                     open: parseFloat(c[idx.open]),
                     high: parseFloat(c[idx.high]),
                     low: parseFloat(c[idx.low]),
-                    close: parseFloat(c[idx.close]),
-                    volume: parseInt(c[idx.volume]) || 0
+                    close: parseFloat(c[idx.close])
                 })).filter(c => !isNaN(c.close));
 
                 parsed.sort((a, b) => a.time - b.time);
 
-                if (parsed.length === 0) {
-                    throw new Error('No valid candles after parsing');
-                }
+                if (parsed.length === 0) throw new Error('No valid candles');
 
-                // Проверяем, изменились ли данные
-                const lastTime = parsed[parsed.length - 1].time;
-                const hasNewData = !isUpdate || 
-                                   lastTime > state.chart.lastCandleTime || 
-                                   parsed.length !== state.chart.data.length;
+                const lastCandle = parsed[parsed.length - 1];
+                const lastCandleTime = new Date(lastCandle.time * 1000);
+                const now = getMoscowDate();
+                
+                // Расчёт задержки
+                const delayMs = now - lastCandleTime;
+                const delayMinutes = Math.floor(delayMs / 60000);
+                
+                log('Data received:', {
+                    candles: parsed.length,
+                    lastCandle: formatMoscowDateTime(lastCandleTime),
+                    serverTime: formatMoscowDateTime(now),
+                    delay: `${delayMinutes} мин`,
+                    lastClose: lastCandle.close
+                });
 
-                if (hasNewData) {
-                    log('New data received:', { 
-                        candles: parsed.length, 
-                        lastTime: new Date(lastTime * 1000).toLocaleString('ru-RU'),
-                        lastClose: parsed[parsed.length - 1].close
-                    });
+                // Обновление состояния
+                state.chartData = parsed;
+                state.lastUpdate = Date.now();
 
-                    state.chart.data = parsed;
-                    state.chart.lastCandleTime = lastTime;
-
-                    // Обновляем график
-                    if (!isUpdate) {
-                        initChart(parsed);
-                    } else {
-                        updateChart(parsed);
-                    }
-
-                    // Обновляем UI
-                    updateTicker(parsed);
-                    updateStatus(true);
-                    updateAnalysis();
+                // Обновление UI
+                updateChart(parsed);
+                updateTicker(parsed);
+                updateStatus(true, lastCandleTime, delayMinutes);
+                
+                // Проверка задержки
+                if (delayMinutes > CONFIG.MAX_DELAY_MINUTES) {
+                    showDelayWarning(delayMinutes);
                 } else {
-                    log('No new data, skipping update');
+                    hideDelayWarning();
                 }
 
-                if (!isUpdate) loadingEl.style.display = 'none';
+                if (!force) loadingEl.style.display = 'none';
 
             } catch (err) {
-                log('MOEX Error:', err.message);
-                if (!isUpdate) {
+                log('Error:', err.message);
+                if (!force) {
                     loadingEl.innerHTML = `❌ Ошибка: ${err.message}`;
                     updateStatus(false);
                 }
-                throw err;
             }
+        }
+
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
         }
 
         // ============================================
         // ГРАФИК
         // ============================================
-        function initChart(data) {
-            if (typeof LightweightCharts === 'undefined') {
-                log('Error: LightweightCharts not loaded');
-                return;
-            }
-
-            const container = document.getElementById('chart');
-            const loadingEl = document.getElementById('loading');
-            container.innerHTML = '';
-            container.appendChild(loadingEl);
-
-            state.chart.instance = LightweightCharts.createChart(container, {
-                layout: { 
-                    background: { color: '#161b22' }, 
-                    textColor: '#d1d4dc', 
-                    fontSize: 12 
-                },
-                grid: { 
-                    vertLines: { color: '#30363d' }, 
-                    horzLines: { color: '#30363d' } 
-                },
-                timeScale: { 
-                    borderColor: '#30363d', 
-                    timeVisible: true, 
-                    secondsVisible: false,
-                    rightOffset: 10,
-                    barSpacing: 6
-                },
-                crosshair: { 
-                    mode: LightweightCharts.CrosshairMode.Normal 
-                },
-                width: container.clientWidth,
-                height: 400,
-            });
-
-            state.chart.series = state.chart.instance.addCandlestickSeries({
-                upColor: '#238636',
-                downColor: '#f85149',
-                borderVisible: false,
-                wickVisible: true,
-                priceFormat: { type: 'price', precision: 2, minMove: 0.01 },
-            });
-
-            state.chart.series.setData(data);
-            state.chart.instance.timeScale().fitContent();
-            
-            // Автоматический ресайз
-            window.addEventListener('resize', () => {
-                if (state.chart.instance) {
-                    state.chart.instance.applyOptions({ 
-                        width: container.clientWidth 
-                    });
-                }
-            });
-        }
-
         function updateChart(data) {
-            if (!state.chart.series) {
-                initChart(data);
-                return;
+            if (!state.chart) {
+                const container = document.getElementById('chart');
+                document.getElementById('loading').style.display = 'none';
+                
+                state.chart = LightweightCharts.createChart(container, {
+                    layout: { background: { color: '#161b22' }, textColor: '#d1d4dc' },
+                    grid: { vertLines: { color: '#30363d' }, horzLines: { color: '#30363d' } },
+                    timeScale: { 
+                        borderColor: '#30363d', 
+                        timeVisible: true,
+                        rightOffset: 10
+                    },
+                    width: container.clientWidth,
+                    height: 400
+                });
+
+                state.series = state.chart.addCandlestickSeries({
+                    upColor: '#238636',
+                    downColor: '#f85149',
+                    borderVisible: false,
+                    wickVisible: true
+                });
+
+                window.addEventListener('resize', () => {
+                    state.chart.applyOptions({ width: container.clientWidth });
+                });
             }
-            state.chart.series.setData(data);
-            state.chart.instance.timeScale().fitContent();
+
+            state.series.setData(data);
+            state.chart.timeScale().fitContent();
         }
 
         function updateTicker(data) {
-            if (!data?.length) return;
+            if (!data.length) return;
             
             const last = data[data.length - 1];
             const prev = data[data.length - 2] || last;
-            const change = last.close - prev.open; // Изменение за свечу
-            const changePercent = (change / prev.open) * 100;
-            const dayChange = last.close - data[0].open; // Изменение за период
+            const change = last.close - prev.close;
+            const changePct = (change / prev.close) * 100;
 
             document.getElementById('currentPrice').innerText = last.close.toFixed(2);
             
             const sign = change >= 0 ? '+' : '';
             const cls = change >= 0 ? 'positive' : 'negative';
-
+            
             document.getElementById('priceChange').innerText = `${sign}${change.toFixed(2)}`;
             document.getElementById('priceChange').className = `ticker-change ${cls}`;
-            document.getElementById('changePercent').innerText = `${sign}${changePercent.toFixed(2)}%`;
+            document.getElementById('changePercent').innerText = `${sign}${changePct.toFixed(2)}%`;
             document.getElementById('changePercent').className = `ticker-value ${cls}`;
-            document.getElementById('changeValue').innerText = `${sign}${dayChange.toFixed(2)}`;
         }
 
-        function updateStatus(connected) {
-            state.ui.isConnected = connected;
-            const statusEl = document.getElementById('connectionStatus');
+        function updateStatus(connected, lastCandleTime = null, delayMinutes = 0) {
+            const statusEl = document.getElementById('statusConnection');
             const statusText = document.getElementById('statusText');
-            const updateTime = document.getElementById('updateTime');
             
             if (connected) {
-                statusEl.className = 'connection-status online';
-                statusText.innerText = 'Онлайн';
-                updateTime.innerText = getMoscowTime();
+                const isDelayed = delayMinutes > CONFIG.MAX_DELAY_MINUTES;
+                statusEl.className = 'status-item ' + (isDelayed ? 'warning' : 'online');
+                statusText.innerText = isDelayed ? 'Задержка' : 'Онлайн';
+                
+                document.getElementById('lastCandleTime').innerText = formatMoscowDateTime(lastCandleTime);
+                document.getElementById('delayTime').innerText = `${delayMinutes} мин`;
+                document.getElementById('updateTime').innerText = formatMoscowTime(getMoscowDate());
+                
+                // Индикатор LIVE
+                const liveDot = document.getElementById('liveDot');
+                const liveText = document.getElementById('liveText');
+                if (isDelayed) {
+                    liveDot.className = 'live-dot warning';
+                    liveText.innerText = 'DELAY';
+                } else {
+                    liveDot.className = 'live-dot';
+                    liveText.innerText = 'LIVE';
+                }
             } else {
-                statusEl.className = 'connection-status offline';
+                statusEl.className = 'status-item error';
                 statusText.innerText = 'Ошибка';
             }
         }
 
-        function updateAnalysis() {
-            const analysis = analyzeTechnical(state.chart.data);
-            state.analysis.technical = analysis;
-            
-            // Обновляем индикаторы
-            document.getElementById('techBar').style.width = Math.abs(analysis.score) + '%';
-            document.getElementById('techBar').className = 'influence-fill ' + 
-                (analysis.score > 20 ? 'bullish' : analysis.score < -20 ? 'bearish' : 'neutral');
-            document.getElementById('techScore').innerText = (analysis.score > 0 ? '+' : '') + Math.round(analysis.score);
-            
-            // Обновляем статистику
-            document.getElementById('statRsi').innerText = analysis.rsi?.toFixed(1) || '-';
-            document.getElementById('statMacd').innerText = analysis.macd?.histogram?.slice(-1)[0]?.toFixed(3) || '-';
-            document.getElementById('statEma').innerText = `${analysis.ema20?.toFixed(0) || '-'}/${analysis.ema50?.toFixed(0) || '-'}`;
-            document.getElementById('statTrend').innerText = analysis.direction === 'bullish' ? '↑ Бычий' : 
-                analysis.direction === 'bearish' ? '↓ Медвежий' : '→ Боковик';
-            document.getElementById('statsGrid').style.display = 'grid';
-            
-            updateTotalScore();
+        function showDelayWarning(minutes) {
+            document.getElementById('delayWarning').classList.add('visible');
+            document.getElementById('delayMinutes').innerText = minutes;
         }
 
-        function updateTotalScore() {
-            const tech = state.analysis.technical.score;
-            const news = state.analysis.news.score;
-            const cal = state.analysis.calendar.score;
-            
-            const total = tech * 0.5 + news * 0.3 + cal * 0.2;
-            
-            document.getElementById('newsBar').style.width = Math.min(100, Math.abs(news)) + '%';
-            document.getElementById('newsBar').className = 'influence-fill ' + 
-                (news > 10 ? 'bullish' : news < -10 ? 'bearish' : 'neutral');
-            document.getElementById('newsScore').innerText = (news > 0 ? '+' : '') + Math.round(news);
-            
-            document.getElementById('calendarBar').style.width = Math.min(100, cal) + '%';
-            document.getElementById('calendarScore').innerText = Math.round(cal);
-            
-            document.getElementById('totalBar').style.width = Math.min(100, Math.abs(total)) + '%';
-            document.getElementById('totalBar').className = 'influence-fill ' + 
-                (total > 15 ? 'bullish' : total < -15 ? 'bearish' : 'neutral');
-            document.getElementById('totalScore').innerText = (total > 0 ? '+' : '') + Math.round(total);
-            
-            state.analysis.total = { score: total, direction: total > 15 ? 'bullish' : total < -15 ? 'bearish' : 'neutral' };
+        function hideDelayWarning() {
+            document.getElementById('delayWarning').classList.remove('visible');
         }
 
         // ============================================
-        // АВТООБНОВЛЕНИЕ - КАЖДЫЕ 30 СЕКУНД
+        // АВТООБНОВЛЕНИЕ
         // ============================================
         let updateTimer = null;
         let countdownTimer = null;
 
         function startAutoUpdate() {
             stopAutoUpdate();
-            state.ui.countdown = CONFIG.UPDATE_INTERVAL;
-            updateTimerDisplay();
-
-            // Основной таймер обновления данных
+            
             updateTimer = setInterval(() => {
-                if (state.ui.autoUpdate) {
-                    log('Auto-update triggered');
-                    loadMoexData(state.chart.currentTf, true).catch(err => {
-                        log('Auto-update failed:', err.message);
-                    });
+                if (document.getElementById('autoUpdateCheck').checked) {
+                    loadData(state.currentTf, true);
                 }
             }, CONFIG.UPDATE_INTERVAL * 1000);
 
-            // Таймер обратного отсчёта для UI
+            let countdown = CONFIG.UPDATE_INTERVAL;
+            document.getElementById('timerDisplay').innerText = `00:${countdown.toString().padStart(2, '0')}`;
+            
             countdownTimer = setInterval(() => {
-                if (state.ui.autoUpdate) {
-                    state.ui.countdown--;
-                    if (state.ui.countdown <= 0) state.ui.countdown = CONFIG.UPDATE_INTERVAL;
-                    updateTimerDisplay();
+                if (document.getElementById('autoUpdateCheck').checked) {
+                    countdown--;
+                    if (countdown <= 0) countdown = CONFIG.UPDATE_INTERVAL;
+                    document.getElementById('timerDisplay').innerText = `00:${countdown.toString().padStart(2, '0')}`;
                 }
             }, 1000);
         }
@@ -1703,16 +715,38 @@
             if (countdownTimer) clearInterval(countdownTimer);
         }
 
-        function updateTimerDisplay() {
-            const m = Math.floor(state.ui.countdown / 60);
-            const s = state.ui.countdown % 60;
-            document.getElementById('timerDisplay').innerText = 
-                `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        function forceRefresh() {
+            log('Manual refresh triggered');
+            loadData(state.currentTf, false);
         }
 
-        function forceRefresh() {
-            log('Manual refresh');
-            loadMoexData(state.chart.currentTf, false);
+        // ============================================
+        // АЛЬТЕРНАТИВНЫЙ ИСТОЧНИК (ТЕСТ)
+        // ============================================
+        async function testAlternateSource() {
+            log('Testing alternate data sources...');
+            
+            // Пробуем получить последние сделки (trades) - они могут быть свежее
+            try {
+                const url = `https://iss.moex.com/iss/engines/futures/markets/forts/securities/${CONFIG.TICKER}/trades.json?limit=100&_=${Date.now()}`;
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                if (data.trades?.data?.length) {
+                    const cols = data.trades.columns;
+                    const timeIdx = cols.indexOf('tradetime');
+                    const priceIdx = cols.indexOf('price');
+                    
+                    const lastTrade = data.trades.data[data.trades.data.length - 1];
+                    const tradeTime = lastTrade[timeIdx];
+                    const tradePrice = lastTrade[priceIdx];
+                    
+                    log('Last trade:', { time: tradeTime, price: tradePrice });
+                    alert(`Последняя сделка: ${tradePrice} в ${tradeTime}\n\nСделки обычно свежее свечей!`);
+                }
+            } catch (e) {
+                log('Trades error:', e.message);
+            }
         }
 
         // ============================================
@@ -1724,183 +758,32 @@
                 if (!btn) return;
 
                 const newTf = parseInt(btn.dataset.tf);
-                if (newTf === state.chart.currentTf) return;
+                if (newTf === state.currentTf) return;
 
-                // Обновляем UI кнопок
                 document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
 
-                // Меняем таймфрейм
-                state.chart.currentTf = newTf;
-                state.chart.lastCandleTime = 0;
-                
-                log('Timeframe changed to:', newTf);
-                
-                // Перезагружаем данные
-                loadMoexData(newTf, false);
+                state.currentTf = newTf;
+                log('Timeframe changed:', newTf);
+                loadData(newTf, false);
             });
-        }
-
-        // ============================================
-        // НАСТРОЙКИ
-        // ============================================
-        function toggleSetting(name) {
-            state.settings[name] = !state.settings[name];
-            document.getElementById(name + 'Toggle').classList.toggle('active', state.settings[name]);
-            localStorage.setItem('si_settings', JSON.stringify(state.settings));
-        }
-
-        function loadSettings() {
-            const saved = localStorage.getItem('si_settings');
-            if (saved) {
-                Object.assign(state.settings, JSON.parse(saved));
-                Object.keys(state.settings).forEach(key => {
-                    document.getElementById(key + 'Toggle')?.classList.toggle('active', state.settings[key]);
-                });
-            }
-        }
-
-        function saveConfig() {
-            const key = document.getElementById('api_key_input').value.trim();
-            if (key) localStorage.setItem('si_key', key);
-            else localStorage.removeItem('si_key');
-            alert(key ? "Ключ сохранён" : "Ключ удалён");
-        }
-
-        function toggleProxy() {
-            state.ui.useProxy = !state.ui.useProxy;
-            const btn = document.getElementById('proxyBtn');
-            btn.innerText = state.ui.useProxy ? "🔁 CORS-прокси: ВКЛ" : "🔁 CORS-прокси: ВЫКЛ";
-            btn.classList.toggle('active', state.ui.useProxy);
-        }
-
-        // ============================================
-        // AI АНАЛИЗ
-        // ============================================
-        async function runComplexAnalysis() {
-            const apiKey = document.getElementById('api_key_input').value.trim();
-            if (!apiKey) {
-                alert("Введите API-ключ OpenRouter");
-                return;
-            }
-            if (!state.chart.data.length) {
-                alert("Нет данных для анализа");
-                return;
-            }
-
-            document.getElementById('signal_text').innerText = "АНАЛИЗ...";
-            
-            const price = state.chart.data[state.chart.data.length - 1].close;
-            const tech = state.analysis.technical;
-
-            const prompt = {
-                model: "deepseek/deepseek-chat",
-                messages: [{
-                    role: "user",
-                    content: `Ты трейдер фьючерсов Si (рубль/доллар). Дай сигнал.
-Цена: ${price}, RSI: ${tech.rsi?.toFixed(1)}, Тренд: ${tech.direction}
-Факторы: ${tech.factors.map(f => f.name).join(', ')}
-Ответь JSON: {"signal":"ПОКУПКА|ПРОДАЖА|ДЕРЖАТЬ","confidence":0-100,"reason":"кратко"}`
-                }]
-            };
-
-            try {
-                const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${apiKey}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(prompt)
-                });
-                
-                const data = await res.json();
-                const result = JSON.parse(data.choices[0].message.content.match(/\{[^}]+\}/)[0]);
-                
-                const ui = document.getElementById('signal_ui');
-                ui.className = "signal-display " + (result.signal === 'ПОКУПКА' ? 'buy' : result.signal === 'ПРОДАЖА' ? 'sell' : 'hold');
-                document.getElementById('signal_text').innerText = result.signal;
-                document.getElementById('signal_confidence').innerText = `Уверенность: ${result.confidence}%`;
-                document.getElementById('ai_desc').innerText = result.reason;
-                
-                if (state.ui.lastSignal !== result.signal) {
-                    showNotification(result.signal, price, result.reason, result.confidence);
-                    state.ui.lastSignal = result.signal;
-                }
-
-            } catch (e) {
-                document.getElementById('signal_text').innerText = "ОШИБКА";
-                log('AI Error:', e);
-            }
-        }
-
-        function testSignal() {
-            const signals = ['ПОКУПКА', 'ПРОДАЖА', 'ДЕРЖАТЬ'];
-            const sig = signals[Math.floor(Math.random() * signals.length)];
-            const price = state.chart.data.length ? state.chart.data[state.chart.data.length - 1].close : 77000;
-            showNotification(sig, price, 'Тестовый сигнал', 75);
-        }
-
-        // ============================================
-        // ЗАГЛУШКИ ДЛЯ КАЛЕНДАРЯ И НОВОСТЕЙ
-        // ============================================
-        function refreshCalendar() {
-            // Заглушка - в реальном коде здесь API запрос
-            document.getElementById('calendarList').innerHTML = 
-                '<div style="text-align:center;color:#8b949e;padding:20px">Календарь обновлён (заглушка)</div>';
-            document.getElementById('calendarCount').innerText = '0';
-        }
-
-        function refreshNews() {
-            document.getElementById('newsList').innerHTML = 
-                '<div style="text-align:center;color:#8b949e;padding:20px">Новости обновлены (заглушка)</div>';
-            document.getElementById('newsCount').innerText = '0';
-        }
-
-        function filterCalendar(type) {
-            document.querySelectorAll('#calendarContainer .filter-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-        }
-
-        function filterNews(type) {
-            document.querySelectorAll('#newsContainer .filter-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
         }
 
         // ============================================
         // ИНИЦИАЛИЗАЦИЯ
         // ============================================
         document.addEventListener('DOMContentLoaded', () => {
-            log('Initializing...');
+            log('Starting... Timezone:', Intl.DateTimeFormat().resolvedOptions().timeZone);
+            log('Moscow time:', formatMoscowTime(getMoscowDate()));
+            log('Trading hours:', checkTradingHours() ? 'YES' : 'NO');
             
-            loadSettings();
-            
-            const savedKey = localStorage.getItem('si_key');
-            if (savedKey) document.getElementById('api_key_input').value = savedKey;
-
             initTimeframeButtons();
             
             // Первая загрузка
-            loadMoexData(60, false).then(() => {
-                // Запускаем автообновление каждые 30 сек
+            loadData(60, false).then(() => {
                 startAutoUpdate();
-                log('Auto-update started:', CONFIG.UPDATE_INTERVAL, 'seconds');
+                log('Auto-update started');
             });
-
-            // Обработчик чекбокса автообновления
-            document.getElementById('autoUpdateCheck').addEventListener('change', (e) => {
-                state.ui.autoUpdate = e.target.checked;
-                if (state.ui.autoUpdate) {
-                    startAutoUpdate();
-                } else {
-                    stopAutoUpdate();
-                }
-            });
-
-            // Разрешение на уведомления
-            if ("Notification" in window && Notification.permission === "default") {
-                Notification.requestPermission();
-            }
         });
     </script>
 </body>
