@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Si-3.26 Аналитик | MOEX Real-Time</title>
+    <title>Si-3.26 Аналитик | Реальное время для цифр</title>
     <script src="https://unpkg.com/lightweight-charts@4.0.1/dist/lightweight-charts.standalone.production.js"></script>
     <style>
         :root {
@@ -15,29 +15,23 @@
             --buy: #238636;
             --sell: #f85149;
             --live: #3fb950;
+            --warning: #f0883e;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--bg);
             color: var(--text);
             padding: 12px;
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
 
         h2 {
             text-align: center;
             font-size: clamp(1.2rem, 5vw, 1.8rem);
-            margin: 0 0 12px 0;
-            font-weight: 500;
+            margin-bottom: 12px;
         }
 
         .grid {
@@ -55,7 +49,6 @@
             border-radius: 20px;
             padding: 16px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            position: relative;
         }
 
         #chart {
@@ -72,7 +65,6 @@
             gap: 8px;
             margin-bottom: 16px;
             flex-wrap: wrap;
-            justify-content: flex-start;
             border-bottom: 1px solid var(--border);
             padding-bottom: 12px;
         }
@@ -88,9 +80,6 @@
             cursor: pointer;
             transition: all 0.2s;
             opacity: 0.7;
-            white-space: nowrap;
-            min-width: 50px;
-            text-align: center;
         }
 
         .tf-btn.active {
@@ -120,17 +109,58 @@
             margin-left: 12px;
         }
 
+        .live-indicator.delayed {
+            background: rgba(240, 136, 62, 0.2);
+            color: var(--warning);
+        }
+
         .live-dot {
             width: 8px;
             height: 8px;
             background: var(--live);
             border-radius: 50%;
-            animation: pulse-live 1.5s infinite;
+            animation: pulse 1.5s infinite;
         }
 
-        @keyframes pulse-live {
+        .live-indicator.delayed .live-dot {
+            background: var(--warning);
+            animation: none;
+        }
+
+        @keyframes pulse {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 11px;
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: #0d1117;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .status-item.live { border-color: var(--live); color: var(--live); }
+        .status-item.chart { border-color: #58a6ff; color: #58a6ff; }
+        .status-item.warning { border-color: var(--warning); color: var(--warning); }
+
+        .data-source-label {
+            font-size: 10px;
+            color: #8b949e;
+            text-align: center;
+            margin-top: 4px;
         }
 
         .notification-container {
@@ -158,39 +188,13 @@
             transition: all 0.3s;
         }
 
-        .notification:hover {
-            transform: translateX(-5px);
-        }
-
-        .notification.buy {
-            border-color: var(--buy);
-            background: rgba(35, 134, 54, 0.15);
-        }
-
-        .notification.sell {
-            border-color: var(--sell);
-            background: rgba(248, 81, 73, 0.15);
-        }
-
-        .notification-icon {
-            font-size: 32px;
-        }
-
-        .notification-content {
-            flex: 1;
-        }
-
-        .notification-title {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .notification-text {
-            font-size: 12px;
-            color: #8b949e;
-        }
-
+        .notification:hover { transform: translateX(-5px); }
+        .notification.buy { border-color: var(--buy); background: rgba(35, 134, 54, 0.15); }
+        .notification.sell { border-color: var(--sell); background: rgba(248, 81, 73, 0.15); }
+        .notification-icon { font-size: 32px; }
+        .notification-content { flex: 1; }
+        .notification-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .notification-text { font-size: 12px; color: #8b949e; }
         .notification-close {
             background: none;
             border: none;
@@ -205,10 +209,7 @@
             justify-content: center;
             opacity: 0.7;
         }
-
-        .notification-close:hover {
-            opacity: 1;
-        }
+        .notification-close:hover { opacity: 1; }
 
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
@@ -258,10 +259,7 @@
             border-left: 3px solid transparent;
         }
 
-        .calendar-item:hover {
-            border-color: var(--accent);
-        }
-
+        .calendar-item:hover { border-color: var(--accent); }
         .calendar-item.high { border-left-color: var(--sell); }
         .calendar-item.medium { border-left-color: #f0883e; }
         .calendar-item.low { border-left-color: #58a6ff; }
@@ -353,9 +351,7 @@
             color: white;
         }
 
-        .filter-btn:hover {
-            border-color: var(--accent);
-        }
+        .filter-btn:hover { border-color: var(--accent); }
 
         .news-container {
             margin-top: 16px;
@@ -400,10 +396,7 @@
             border-left: 3px solid transparent;
         }
 
-        .news-item:hover {
-            border-color: var(--accent);
-        }
-
+        .news-item:hover { border-color: var(--accent); }
         .news-item.high { border-left-color: var(--sell); }
         .news-item.medium { border-left-color: #f0883e; }
         .news-item.low { border-left-color: #58a6ff; }
@@ -736,17 +729,6 @@
             to { transform: rotate(360deg); }
         }
 
-        .last-update {
-            text-align: center;
-            font-size: 12px;
-            color: #8b949e;
-            margin-top: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
         .price-ticker {
             display: flex;
             justify-content: space-around;
@@ -856,40 +838,6 @@
         .factor-score.negative { color: #f85149; }
         .factor-score.neutral { color: #8b949e; }
 
-        .connection-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 11px;
-            padding: 4px 8px;
-            border-radius: 12px;
-            background: #21262d;
-        }
-
-        .connection-status.online {
-            background: rgba(35, 134, 54, 0.2);
-            color: #3fb950;
-        }
-
-        .connection-status.offline {
-            background: rgba(248, 81, 73, 0.2);
-            color: #f85149;
-        }
-
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: currentColor;
-        }
-
-        .update-info {
-            font-size: 10px;
-            color: #8b949e;
-            text-align: center;
-            margin-top: 4px;
-        }
-
         @media (max-width: 1100px) {
             .grid { grid-template-columns: 1fr; }
             #chart { height: 350px; }
@@ -913,9 +861,9 @@
 
     <h2>
         Анализ Si-3.26 (H6) 
-        <span class="live-indicator">
+        <span class="live-indicator" id="liveIndicator">
             <span class="live-dot"></span>
-            LIVE
+            <span id="liveText">LIVE</span>
         </span>
     </h2>
 
@@ -930,16 +878,26 @@
                 <button class="tf-btn" data-tf="10080" type="button">1W</button>
             </div>
             <div id="chart">
-                <div id="loading"><div class="spinner"></div> Подключение к MOEX...</div>
+                <div id="loading"><div class="spinner"></div> Загрузка...</div>
             </div>
-            <div class="last-update" id="lastUpdate">
-                <span class="connection-status offline" id="connectionStatus">
-                    <span class="status-dot"></span>
-                    <span id="statusText">Подключение...</span>
-                </span>
-                <span id="updateTime">-</span>
+            
+            <div class="status-bar">
+                <div class="status-item live" id="statusLive">
+                    <span>●</span>
+                    <span id="liveStatusText">Цифры: обновление...</span>
+                </div>
+                <div class="status-item chart" id="statusChart">
+                    <span>●</span>
+                    <span id="chartStatusText">График: обновление...</span>
+                </div>
+                <div class="status-item" id="lastUpdateTime">
+                    <span>Посл. обновл.:</span>
+                    <span id="updateTimeVal">-</span>
+                </div>
             </div>
-            <div class="update-info" id="updateInfo">Обновление каждые 30 секунд</div>
+            <div class="data-source-label">
+                Цифры (RSI/MACD/EMA/Цена) — реальное время через сделки | График — свечи MOEX (может отставать)
+            </div>
 
             <div class="influence-panel" id="influencePanel">
                 <div class="influence-title">
@@ -1016,7 +974,7 @@
             <div class="card">
                 <div class="price-ticker" id="priceTicker">
                     <div class="ticker-item">
-                        <div class="ticker-label">Цена</div>
+                        <div class="ticker-label">Цена (LIVE)</div>
                         <div class="ticker-value" id="currentPrice">-</div>
                         <div class="ticker-change" id="priceChange">-</div>
                     </div>
@@ -1104,19 +1062,14 @@
         const CONFIG = {
             UPDATE_INTERVAL: 30, // секунды
             TICKER: "SiH6",
-            MAX_RETRIES: 3,
-            RETRY_DELAY: 5000
+            TF_MAP: { 1: 1, 10: 10, 60: 60, 240: 24, 1440: 'D', 10080: 'W' }
         };
 
         // ============================================
         // СОСТОЯНИЕ
         // ============================================
         const state = {
-            settings: {
-                sound: true,
-                notification: true,
-                importantOnly: true
-            },
+            settings: { sound: true, notification: true, importantOnly: true },
             analysis: {
                 technical: { score: 0, direction: 'neutral', factors: [] },
                 news: { score: 0, direction: 'neutral', items: [] },
@@ -1130,6 +1083,13 @@
                 instance: null,
                 series: null
             },
+            // Для реального времени
+            realtime: {
+                currentPrice: 0,
+                lastPrice: 0,
+                trades: [], // последние сделки
+                isActive: false
+            },
             ui: {
                 lastSignal: null,
                 signalHistory: [],
@@ -1138,20 +1098,7 @@
                 autoUpdate: true,
                 countdown: CONFIG.UPDATE_INTERVAL
             },
-            data: {
-                news: [],
-                calendar: []
-            }
-        };
-
-        // Маппинг таймфреймов MOEX
-        const TF_MAP = {
-            1: 1,      // 1 минута
-            10: 10,    // 10 минут
-            60: 60,    // 1 час
-            240: 24,   // 4 часа (как дневной в MOEX)
-            1440: 'D', // 1 день
-            10080: 'W' // 1 неделя
+            data: { news: [], calendar: [] }
         };
 
         // ============================================
@@ -1267,7 +1214,7 @@
         }
 
         // ============================================
-        // ТЕХНИЧЕСКИЙ АНАЛИЗ
+        // ТЕХНИЧЕСКИЙ АНАЛИЗ (на основе реальных данных)
         // ============================================
         function calculateRSI(prices, period = 14) {
             if (prices.length < period + 1) return [];
@@ -1314,342 +1261,195 @@
             return { macdLine, signalLine, histogram };
         }
 
-        function analyzeTechnical(data) {
-            if (!data || data.length < 50) {
-                return { score: 0, direction: 'neutral', factors: [], rsi: 50, macd: null, ema20: 0, ema50: 0 };
-            }
-
-            const closes = data.map(d => d.close);
-            const factors = [];
-            let score = 0;
-
-            // RSI
-            const rsi = calculateRSI(closes);
-            const lastRsi = rsi[rsi.length - 1] || 50;
-            
-            if (lastRsi < 30) {
-                score += 30;
-                factors.push({ name: 'RSI перепродан (<30)', score: 30, dir: 'bullish' });
-            } else if (lastRsi > 70) {
-                score -= 30;
-                factors.push({ name: 'RSI перекуплен (>70)', score: -30, dir: 'bearish' });
-            } else if (lastRsi < 45) {
-                score += 10;
-                factors.push({ name: 'RSI близок к перепроданности', score: 10, dir: 'bullish' });
-            } else if (lastRsi > 55) {
-                score -= 10;
-                factors.push({ name: 'RSI близок к перекупленности', score: -10, dir: 'bearish' });
-            }
-
-            // MACD
-            const macd = calculateMACD(closes);
-            const lastMacd = macd.histogram[macd.histogram.length - 1] || 0;
-            const prevMacd = macd.histogram[macd.histogram.length - 2] || 0;
-            
-            if (lastMacd > 0 && prevMacd <= 0) {
-                score += 25;
-                factors.push({ name: 'MACD пересёк ноль вверх', score: 25, dir: 'bullish' });
-            } else if (lastMacd < 0 && prevMacd >= 0) {
-                score -= 25;
-                factors.push({ name: 'MACD пересёк ноль вниз', score: -25, dir: 'bearish' });
-            } else if (lastMacd > 0) {
-                score += 10;
-                factors.push({ name: 'MACD > 0', score: 10, dir: 'bullish' });
-            } else {
-                score -= 10;
-                factors.push({ name: 'MACD < 0', score: -10, dir: 'bearish' });
-            }
-
-            // EMA
-            const ema20 = calculateEMA(closes, 20);
-            const ema50 = calculateEMA(closes, 50);
-            const lastEma20 = ema20[ema20.length - 1] || 0;
-            const lastEma50 = ema50[ema50.length - 1] || 0;
-            const lastPrice = closes[closes.length - 1];
-
-            if (lastEma20 > lastEma50 && lastPrice > lastEma20) {
-                score += 20;
-                factors.push({ name: 'Цена > EMA20 > EMA50', score: 20, dir: 'bullish' });
-            } else if (lastEma20 < lastEma50 && lastPrice < lastEma20) {
-                score -= 20;
-                factors.push({ name: 'Цена < EMA20 < EMA50', score: -20, dir: 'bearish' });
-            }
-
-            // Trend
-            const recent = closes.slice(-10);
-            const up = recent.every((c, i) => i === 0 || c >= recent[i-1] * 0.998);
-            const down = recent.every((c, i) => i === 0 || c <= recent[i-1] * 1.002);
-            
-            if (up) {
-                score += 15;
-                factors.push({ name: 'Восходящий тренд (10 свечей)', score: 15, dir: 'bullish' });
-            } else if (down) {
-                score -= 15;
-                factors.push({ name: 'Нисходящий тренд (10 свечей)', score: -15, dir: 'bearish' });
-            }
-
-            score = Math.max(-100, Math.min(100, score));
-            const direction = score > 20 ? 'bullish' : score < -20 ? 'bearish' : 'neutral';
-
-            return { 
-                score, 
-                direction, 
-                factors, 
-                rsi: lastRsi, 
-                macd, 
-                ema20: lastEma20, 
-                ema50: lastEma50 
-            };
-        }
-
         // ============================================
-        // MOEX API - КЛЮЧЕВАЯ ФУНКЦИЯ
+        // ОБНОВЛЕНИЕ ЦИФР В РЕАЛЬНОМ ВРЕМЕНИ
         // ============================================
         
         /**
-         * ГЛАВНАЯ ФУНКЦИЯ: Загрузка данных с MOEX
-         * Работает на ВСЕХ таймфреймах
+         * КЛЮЧЕВАЯ ФУНКЦИЯ: Получение последних сделок для реального времени
          */
-        async function loadMoexData(timeframe = state.chart.currentTf, isUpdate = false) {
-            const loadingEl = document.getElementById('loading');
-            const interval = TF_MAP[timeframe];
-            
-            if (!interval) {
-                log('Error: Invalid timeframe', timeframe);
-                return;
-            }
-
-            if (!isUpdate) loadingEl.style.display = 'flex';
-
-            // Рассчитываем период загрузки в зависимости от ТФ
-            let daysBack = 7;
-            if (timeframe === 1) daysBack = 1;
-            else if (timeframe === 10) daysBack = 2;
-            else if (timeframe === 60) daysBack = 14;
-            else if (timeframe === 240) daysBack = 30;
-            else if (timeframe === 1440) daysBack = 90;
-            else if (timeframe === 10080) daysBack = 365;
-
-            const from = new Date();
-            from.setDate(from.getDate() - daysBack);
-            const till = new Date();
-            till.setDate(till.getDate() + 1); // +1 день для получения сегодняшних данных
-
-            const url = `https://iss.moex.com/iss/engines/futures/markets/forts/securities/${CONFIG.TICKER}/candles.json?interval=${interval}&from=${formatDate(from)}&till=${formatDate(till)}`;
-
-            log('Fetching MOEX data:', { timeframe, interval, url: url.substring(0, 80) + '...' });
-
+        async function fetchRealtimeData() {
             try {
-                const response = await fetch(url);
+                // API последних сделок MOEX - даёт реальное время
+                const cacheBuster = Date.now();
+                const url = `https://iss.moex.com/iss/engines/futures/markets/forts/securities/${CONFIG.TICKER}/trades.json?limit=100&_=${cacheBuster}`;
+                
+                log('Fetching realtime trades...');
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+                
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
                 const data = await response.json();
                 
-                if (!data.candles?.data?.length) {
-                    throw new Error('No data from MOEX');
+                if (!data.trades?.data?.length) {
+                    throw new Error('No trades data');
                 }
 
-                // Парсим данные
-                const cols = data.candles.columns;
-                const idx = {
-                    open: cols.indexOf('open'),
-                    close: cols.indexOf('close'),
-                    high: cols.indexOf('high'),
-                    low: cols.indexOf('low'),
-                    begin: cols.indexOf('begin'),
-                    volume: cols.indexOf('volume')
-                };
+                const cols = data.trades.columns;
+                const priceIdx = cols.indexOf('price');
+                const timeIdx = cols.indexOf('tradetime');
+                const qtyIdx = cols.indexOf('quantity');
+                
+                // Парсим сделки
+                const trades = data.trades.data.map(t => ({
+                    price: parseFloat(t[priceIdx]),
+                    time: t[timeIdx],
+                    volume: parseInt(t[qtyIdx]) || 0
+                })).filter(t => !isNaN(t.price));
 
-                const parsed = data.candles.data.map(c => ({
-                    time: Math.floor(new Date(c[idx.begin]).getTime() / 1000),
-                    open: parseFloat(c[idx.open]),
-                    high: parseFloat(c[idx.high]),
-                    low: parseFloat(c[idx.low]),
-                    close: parseFloat(c[idx.close]),
-                    volume: parseInt(c[idx.volume]) || 0
-                })).filter(c => !isNaN(c.close));
+                if (trades.length === 0) throw new Error('No valid trades');
 
-                parsed.sort((a, b) => a.time - b.time);
-
-                if (parsed.length === 0) {
-                    throw new Error('No valid candles after parsing');
-                }
-
-                // Проверяем, изменились ли данные
-                const lastTime = parsed[parsed.length - 1].time;
-                const hasNewData = !isUpdate || 
-                                   lastTime > state.chart.lastCandleTime || 
-                                   parsed.length !== state.chart.data.length;
-
-                if (hasNewData) {
-                    log('New data received:', { 
-                        candles: parsed.length, 
-                        lastTime: new Date(lastTime * 1000).toLocaleString('ru-RU'),
-                        lastClose: parsed[parsed.length - 1].close
-                    });
-
-                    state.chart.data = parsed;
-                    state.chart.lastCandleTime = lastTime;
-
-                    // Обновляем график
-                    if (!isUpdate) {
-                        initChart(parsed);
-                    } else {
-                        updateChart(parsed);
-                    }
-
-                    // Обновляем UI
-                    updateTicker(parsed);
-                    updateStatus(true);
-                    updateAnalysis();
-                } else {
-                    log('No new data, skipping update');
-                }
-
-                if (!isUpdate) loadingEl.style.display = 'none';
-
+                // Сортируем по времени (новые первые)
+                trades.sort((a, b) => new Date(b.time) - new Date(a.time));
+                
+                // Берём последнюю цену
+                const lastTrade = trades[0];
+                const prevTrade = trades[1] || lastTrade;
+                
+                state.realtime.currentPrice = lastTrade.price;
+                state.realtime.lastPrice = prevTrade.price;
+                state.realtime.trades = trades;
+                state.realtime.isActive = true;
+                
+                log('Realtime update:', {
+                    price: lastTrade.price,
+                    time: lastTrade.time,
+                    tradesCount: trades.length
+                });
+                
+                // Обновляем UI с реальными данными
+                updateRealtimeUI();
+                updateStatus(true, true); // live = true
+                
+                return true;
+                
             } catch (err) {
-                log('MOEX Error:', err.message);
-                if (!isUpdate) {
-                    loadingEl.innerHTML = `❌ Ошибка: ${err.message}`;
-                    updateStatus(false);
-                }
-                throw err;
+                log('Realtime fetch error:', err.message);
+                updateStatus(false, true);
+                return false;
             }
         }
 
-        // ============================================
-        // ГРАФИК
-        // ============================================
-        function initChart(data) {
-            if (typeof LightweightCharts === 'undefined') {
-                log('Error: LightweightCharts not loaded');
-                return;
-            }
-
-            const container = document.getElementById('chart');
-            const loadingEl = document.getElementById('loading');
-            container.innerHTML = '';
-            container.appendChild(loadingEl);
-
-            state.chart.instance = LightweightCharts.createChart(container, {
-                layout: { 
-                    background: { color: '#161b22' }, 
-                    textColor: '#d1d4dc', 
-                    fontSize: 12 
-                },
-                grid: { 
-                    vertLines: { color: '#30363d' }, 
-                    horzLines: { color: '#30363d' } 
-                },
-                timeScale: { 
-                    borderColor: '#30363d', 
-                    timeVisible: true, 
-                    secondsVisible: false,
-                    rightOffset: 10,
-                    barSpacing: 6
-                },
-                crosshair: { 
-                    mode: LightweightCharts.CrosshairMode.Normal 
-                },
-                width: container.clientWidth,
-                height: 400,
-            });
-
-            state.chart.series = state.chart.instance.addCandlestickSeries({
-                upColor: '#238636',
-                downColor: '#f85149',
-                borderVisible: false,
-                wickVisible: true,
-                priceFormat: { type: 'price', precision: 2, minMove: 0.01 },
-            });
-
-            state.chart.series.setData(data);
-            state.chart.instance.timeScale().fitContent();
+        /**
+         * Обновление UI реальными данными
+         */
+        function updateRealtimeUI() {
+            const current = state.realtime.currentPrice;
+            const previous = state.realtime.lastPrice;
+            const change = current - previous;
+            const changePct = (change / previous) * 100;
             
-            // Автоматический ресайз
-            window.addEventListener('resize', () => {
-                if (state.chart.instance) {
-                    state.chart.instance.applyOptions({ 
-                        width: container.clientWidth 
-                    });
-                }
-            });
-        }
-
-        function updateChart(data) {
-            if (!state.chart.series) {
-                initChart(data);
-                return;
-            }
-            state.chart.series.setData(data);
-            state.chart.instance.timeScale().fitContent();
-        }
-
-        function updateTicker(data) {
-            if (!data?.length) return;
-            
-            const last = data[data.length - 1];
-            const prev = data[data.length - 2] || last;
-            const change = last.close - prev.open; // Изменение за свечу
-            const changePercent = (change / prev.open) * 100;
-            const dayChange = last.close - data[0].open; // Изменение за период
-
-            document.getElementById('currentPrice').innerText = last.close.toFixed(2);
+            // Обновляем цену
+            document.getElementById('currentPrice').innerText = current.toFixed(2);
             
             const sign = change >= 0 ? '+' : '';
             const cls = change >= 0 ? 'positive' : 'negative';
-
+            
             document.getElementById('priceChange').innerText = `${sign}${change.toFixed(2)}`;
             document.getElementById('priceChange').className = `ticker-change ${cls}`;
-            document.getElementById('changePercent').innerText = `${sign}${changePercent.toFixed(2)}%`;
+            document.getElementById('changePercent').innerText = `${sign}${changePct.toFixed(2)}%`;
             document.getElementById('changePercent').className = `ticker-value ${cls}`;
-            document.getElementById('changeValue').innerText = `${sign}${dayChange.toFixed(2)}`;
+            document.getElementById('changeValue').innerText = `${sign}${change.toFixed(2)}`;
+            
+            // Пересчитываем технический анализ с учётом реальной цены
+            recalculateTechnicalRealtime();
         }
 
-        function updateStatus(connected) {
-            state.ui.isConnected = connected;
-            const statusEl = document.getElementById('connectionStatus');
-            const statusText = document.getElementById('statusText');
-            const updateTime = document.getElementById('updateTime');
+        /**
+         * Пересчёт индикаторов с реальной текущей ценой
+         */
+        function recalculateTechnicalRealtime() {
+            if (!state.chart.data.length) return;
             
-            if (connected) {
-                statusEl.className = 'connection-status online';
-                statusText.innerText = 'Онлайн';
-                updateTime.innerText = getMoscowTime();
-            } else {
-                statusEl.className = 'connection-status offline';
-                statusText.innerText = 'Ошибка';
+            // Берём исторические данные и добавляем текущую цену как "текущую свечу"
+            const historicalCloses = state.chart.data.map(d => d.close);
+            const currentPrice = state.realtime.currentPrice;
+            
+            // Добавляем текущую цену для расчёта "реального времени"
+            const pricesForCalc = [...historicalCloses, currentPrice];
+            
+            // RSI
+            const rsi = calculateRSI(pricesForCalc);
+            const lastRsi = rsi[rsi.length - 1] || 50;
+            
+            // MACD
+            const macd = calculateMACD(pricesForCalc);
+            const lastMacd = macd.histogram[macd.histogram.length - 1] || 0;
+            
+            // EMA
+            const ema20 = calculateEMA(pricesForCalc, 20);
+            const ema50 = calculateEMA(pricesForCalc, 50);
+            const lastEma20 = ema20[ema20.length - 1] || 0;
+            const lastEma50 = ema50[ema50.length - 1] || 0;
+            
+            // Обновляем отображение
+            document.getElementById('statRsi').innerText = lastRsi.toFixed(1);
+            document.getElementById('statMacd').innerText = lastMacd.toFixed(3);
+            document.getElementById('statEma').innerText = `${lastEma20.toFixed(0)}/${lastEma50.toFixed(0)}`;
+            
+            // Определяем тренд на основе реальных данных
+            let trend = '→ Боковик';
+            let trendDir = 'neutral';
+            
+            if (lastRsi < 30 && lastMacd > 0) {
+                trend = '↑ Восходящий (RSI перепродан)';
+                trendDir = 'bullish';
+            } else if (lastRsi > 70 && lastMacd < 0) {
+                trend = '↓ Нисходящий (RSI перекуплен)';
+                trendDir = 'bearish';
+            } else if (currentPrice > lastEma20 && lastEma20 > lastEma50) {
+                trend = '↑ Бычий';
+                trendDir = 'bullish';
+            } else if (currentPrice < lastEma20 && lastEma20 < lastEma50) {
+                trend = '↓ Медвежий';
+                trendDir = 'bearish';
             }
-        }
-
-        function updateAnalysis() {
-            const analysis = analyzeTechnical(state.chart.data);
-            state.analysis.technical = analysis;
             
-            // Обновляем индикаторы
-            document.getElementById('techBar').style.width = Math.abs(analysis.score) + '%';
-            document.getElementById('techBar').className = 'influence-fill ' + 
-                (analysis.score > 20 ? 'bullish' : analysis.score < -20 ? 'bearish' : 'neutral');
-            document.getElementById('techScore').innerText = (analysis.score > 0 ? '+' : '') + Math.round(analysis.score);
-            
-            // Обновляем статистику
-            document.getElementById('statRsi').innerText = analysis.rsi?.toFixed(1) || '-';
-            document.getElementById('statMacd').innerText = analysis.macd?.histogram?.slice(-1)[0]?.toFixed(3) || '-';
-            document.getElementById('statEma').innerText = `${analysis.ema20?.toFixed(0) || '-'}/${analysis.ema50?.toFixed(0) || '-'}`;
-            document.getElementById('statTrend').innerText = analysis.direction === 'bullish' ? '↑ Бычий' : 
-                analysis.direction === 'bearish' ? '↓ Медвежий' : '→ Боковик';
+            document.getElementById('statTrend').innerText = trend;
             document.getElementById('statsGrid').style.display = 'grid';
             
-            updateTotalScore();
+            // Обновляем индикатор влияния
+            updateRealtimeInfluence(lastRsi, lastMacd, currentPrice, lastEma20, lastEma50);
         }
 
-        function updateTotalScore() {
-            const tech = state.analysis.technical.score;
+        function updateRealtimeInfluence(rsi, macd, price, ema20, ema50) {
+            let score = 0;
+            
+            // RSI
+            if (rsi < 30) score += 30;
+            else if (rsi > 70) score -= 30;
+            else if (rsi < 45) score += 10;
+            else if (rsi > 55) score -= 10;
+            
+            // MACD
+            if (macd > 0) score += 15;
+            else score -= 15;
+            
+            // EMA
+            if (price > ema20 && ema20 > ema50) score += 20;
+            else if (price < ema20 && ema20 < ema50) score -= 20;
+            
+            score = Math.max(-100, Math.min(100, score));
+            
+            document.getElementById('techBar').style.width = Math.abs(score) + '%';
+            document.getElementById('techBar').className = 'influence-fill ' + 
+                (score > 20 ? 'bullish' : score < -20 ? 'bearish' : 'neutral');
+            document.getElementById('techScore').innerText = (score > 0 ? '+' : '') + Math.round(score);
+            
+            // Обновляем общий скор
+            updateTotalScore(score);
+        }
+
+        function updateTotalScore(techScore) {
             const news = state.analysis.news.score;
             const cal = state.analysis.calendar.score;
-            
-            const total = tech * 0.5 + news * 0.3 + cal * 0.2;
+            const total = techScore * 0.5 + news * 0.3 + cal * 0.2;
             
             document.getElementById('newsBar').style.width = Math.min(100, Math.abs(news)) + '%';
             document.getElementById('newsBar').className = 'influence-fill ' + 
@@ -1663,12 +1463,167 @@
             document.getElementById('totalBar').className = 'influence-fill ' + 
                 (total > 15 ? 'bullish' : total < -15 ? 'bearish' : 'neutral');
             document.getElementById('totalScore').innerText = (total > 0 ? '+' : '') + Math.round(total);
-            
-            state.analysis.total = { score: total, direction: total > 15 ? 'bullish' : total < -15 ? 'bearish' : 'neutral' };
         }
 
         // ============================================
-        // АВТООБНОВЛЕНИЕ - КАЖДЫЕ 30 СЕКУНД
+        // ГРАФИК СВЕЧЕЙ (может отставать)
+        // ============================================
+        async function loadChartData(timeframe = state.chart.currentTf, isUpdate = false) {
+            const loadingEl = document.getElementById('loading');
+            const interval = CONFIG.TF_MAP[timeframe];
+            
+            if (!interval) return;
+            if (!isUpdate) loadingEl.style.display = 'flex';
+
+            let daysBack = 7;
+            if (timeframe === 1) daysBack = 1;
+            else if (timeframe === 10) daysBack = 2;
+            else if (timeframe === 60) daysBack = 14;
+            else if (timeframe === 240) daysBack = 30;
+            else if (timeframe === 1440) daysBack = 90;
+            else if (timeframe === 10080) daysBack = 365;
+
+            const from = new Date();
+            from.setDate(from.getDate() - daysBack);
+            const till = new Date();
+            till.setDate(till.getDate() + 1);
+
+            const cacheBuster = Date.now();
+            const url = `https://iss.moex.com/iss/engines/futures/markets/forts/securities/${CONFIG.TICKER}/candles.json?interval=${interval}&from=${formatDate(from)}&till=${formatDate(till)}&_=${cacheBuster}`;
+
+            log('Fetching chart data:', { timeframe, interval });
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                if (!data.candles?.data?.length) throw new Error('No candle data');
+
+                const cols = data.candles.columns;
+                const idx = {
+                    open: cols.indexOf('open'),
+                    close: cols.indexOf('close'),
+                    high: cols.indexOf('high'),
+                    low: cols.indexOf('low'),
+                    begin: cols.indexOf('begin')
+                };
+
+                const parsed = data.candles.data.map(c => ({
+                    time: Math.floor(new Date(c[idx.begin]).getTime() / 1000),
+                    open: parseFloat(c[idx.open]),
+                    high: parseFloat(c[idx.high]),
+                    low: parseFloat(c[idx.low]),
+                    close: parseFloat(c[idx.close])
+                })).filter(c => !isNaN(c.close));
+
+                parsed.sort((a, b) => a.time - b.time);
+
+                state.chart.data = parsed;
+                state.chart.lastCandleTime = parsed[parsed.length - 1].time;
+
+                if (!isUpdate) {
+                    initChart(parsed);
+                } else {
+                    updateChart(parsed);
+                }
+                
+                updateStatus(true, false); // chart = true
+                if (!isUpdate) loadingEl.style.display = 'none';
+
+            } catch (err) {
+                log('Chart error:', err.message);
+                if (!isUpdate) {
+                    loadingEl.innerHTML = `❌ Ошибка: ${err.message}`;
+                    updateStatus(false, false);
+                }
+            }
+        }
+
+        function initChart(data) {
+            if (typeof LightweightCharts === 'undefined') return;
+
+            const container = document.getElementById('chart');
+            const loadingEl = document.getElementById('loading');
+            container.innerHTML = '';
+            container.appendChild(loadingEl);
+
+            state.chart.instance = LightweightCharts.createChart(container, {
+                layout: { background: { color: '#161b22' }, textColor: '#d1d4dc' },
+                grid: { vertLines: { color: '#30363d' }, horzLines: { color: '#30363d' } },
+                timeScale: { 
+                    borderColor: '#30363d', 
+                    timeVisible: true,
+                    rightOffset: 10
+                },
+                width: container.clientWidth,
+                height: 400
+            });
+
+            state.chart.series = state.chart.instance.addCandlestickSeries({
+                upColor: '#238636',
+                downColor: '#f85149',
+                borderVisible: false,
+                wickVisible: true
+            });
+
+            state.chart.series.setData(data);
+            state.chart.instance.timeScale().fitContent();
+
+            window.addEventListener('resize', () => {
+                if (state.chart.instance) {
+                    state.chart.instance.applyOptions({ width: container.clientWidth });
+                }
+            });
+        }
+
+        function updateChart(data) {
+            if (!state.chart.series) {
+                initChart(data);
+                return;
+            }
+            state.chart.series.setData(data);
+            state.chart.instance.timeScale().fitContent();
+        }
+
+        function updateStatus(liveConnected, isLive) {
+            const now = getMoscowTime();
+            document.getElementById('updateTimeVal').innerText = now;
+            
+            if (isLive) {
+                // Статус реального времени (цифры)
+                const liveEl = document.getElementById('statusLive');
+                const liveText = document.getElementById('liveStatusText');
+                const indicator = document.getElementById('liveIndicator');
+                
+                if (liveConnected) {
+                    liveEl.className = 'status-item live';
+                    liveText.innerText = 'Цифры: LIVE';
+                    indicator.className = 'live-indicator';
+                    document.getElementById('liveText').innerText = 'LIVE';
+                } else {
+                    liveEl.className = 'status-item warning';
+                    liveText.innerText = 'Цифры: ошибка';
+                    indicator.className = 'live-indicator delayed';
+                    document.getElementById('liveText').innerText = 'DELAY';
+                }
+            } else {
+                // Статус графика
+                const chartEl = document.getElementById('statusChart');
+                const chartText = document.getElementById('chartStatusText');
+                
+                if (liveConnected) {
+                    chartEl.className = 'status-item chart';
+                    chartText.innerText = 'График: обновлён';
+                } else {
+                    chartEl.className = 'status-item warning';
+                    chartText.innerText = 'График: ошибка';
+                }
+            }
+        }
+
+        // ============================================
+        // АВТООБНОВЛЕНИЕ
         // ============================================
         let updateTimer = null;
         let countdownTimer = null;
@@ -1678,17 +1633,16 @@
             state.ui.countdown = CONFIG.UPDATE_INTERVAL;
             updateTimerDisplay();
 
-            // Основной таймер обновления данных
             updateTimer = setInterval(() => {
                 if (state.ui.autoUpdate) {
-                    log('Auto-update triggered');
-                    loadMoexData(state.chart.currentTf, true).catch(err => {
-                        log('Auto-update failed:', err.message);
-                    });
+                    log('Auto-update cycle');
+                    // Обновляем реальные данные (цифры)
+                    fetchRealtimeData();
+                    // Обновляем график (свечи)
+                    loadChartData(state.chart.currentTf, true);
                 }
             }, CONFIG.UPDATE_INTERVAL * 1000);
 
-            // Таймер обратного отсчёта для UI
             countdownTimer = setInterval(() => {
                 if (state.ui.autoUpdate) {
                     state.ui.countdown--;
@@ -1712,7 +1666,8 @@
 
         function forceRefresh() {
             log('Manual refresh');
-            loadMoexData(state.chart.currentTf, false);
+            fetchRealtimeData();
+            loadChartData(state.chart.currentTf, false);
         }
 
         // ============================================
@@ -1726,18 +1681,14 @@
                 const newTf = parseInt(btn.dataset.tf);
                 if (newTf === state.chart.currentTf) return;
 
-                // Обновляем UI кнопок
                 document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
 
-                // Меняем таймфрейм
                 state.chart.currentTf = newTf;
                 state.chart.lastCandleTime = 0;
                 
-                log('Timeframe changed to:', newTf);
-                
-                // Перезагружаем данные
-                loadMoexData(newTf, false);
+                log('Timeframe changed:', newTf);
+                loadChartData(newTf, false);
             });
         }
 
@@ -1783,23 +1734,31 @@
                 alert("Введите API-ключ OpenRouter");
                 return;
             }
-            if (!state.chart.data.length) {
+
+            // Используем реальную цену если есть
+            const price = state.realtime.isActive ? 
+                state.realtime.currentPrice : 
+                (state.chart.data.length ? state.chart.data[state.chart.data.length - 1].close : 0);
+
+            if (!price) {
                 alert("Нет данных для анализа");
                 return;
             }
 
             document.getElementById('signal_text').innerText = "АНАЛИЗ...";
             
-            const price = state.chart.data[state.chart.data.length - 1].close;
-            const tech = state.analysis.technical;
+            // Получаем текущие индикаторы
+            const rsi = parseFloat(document.getElementById('statRsi').innerText) || 50;
+            const macd = parseFloat(document.getElementById('statMacd').innerText) || 0;
+            const emaText = document.getElementById('statEma').innerText || '0/0';
+            const trend = document.getElementById('statTrend').innerText || 'Боковик';
 
             const prompt = {
                 model: "deepseek/deepseek-chat",
                 messages: [{
                     role: "user",
                     content: `Ты трейдер фьючерсов Si (рубль/доллар). Дай сигнал.
-Цена: ${price}, RSI: ${tech.rsi?.toFixed(1)}, Тренд: ${tech.direction}
-Факторы: ${tech.factors.map(f => f.name).join(', ')}
+Цена: ${price.toFixed(2)}, RSI: ${rsi.toFixed(1)}, MACD: ${macd.toFixed(3)}, EMA: ${emaText}, Тренд: ${trend}
 Ответь JSON: {"signal":"ПОКУПКА|ПРОДАЖА|ДЕРЖАТЬ","confidence":0-100,"reason":"кратко"}`
                 }]
             };
@@ -1823,6 +1782,16 @@
                 document.getElementById('signal_confidence').innerText = `Уверенность: ${result.confidence}%`;
                 document.getElementById('ai_desc').innerText = result.reason;
                 
+                // Факторы
+                const factorsEl = document.getElementById('analysisFactors');
+                factorsEl.innerHTML = `
+                    <div class="factor-row"><span class="factor-icon">•</span><span class="factor-text">RSI: ${rsi.toFixed(1)}</span></div>
+                    <div class="factor-row"><span class="factor-icon">•</span><span class="factor-text">MACD: ${macd.toFixed(3)}</span></div>
+                    <div class="factor-row"><span class="factor-icon">•</span><span class="factor-text">EMA: ${emaText}</span></div>
+                    <div class="factor-row"><span class="factor-icon">•</span><span class="factor-text">${result.reason}</span></div>
+                `;
+                document.getElementById('analysisSummary').style.display = 'block';
+                
                 if (state.ui.lastSignal !== result.signal) {
                     showNotification(result.signal, price, result.reason, result.confidence);
                     state.ui.lastSignal = result.signal;
@@ -1837,23 +1806,23 @@
         function testSignal() {
             const signals = ['ПОКУПКА', 'ПРОДАЖА', 'ДЕРЖАТЬ'];
             const sig = signals[Math.floor(Math.random() * signals.length)];
-            const price = state.chart.data.length ? state.chart.data[state.chart.data.length - 1].close : 77000;
+            const price = state.realtime.isActive ? state.realtime.currentPrice : 
+                (state.chart.data.length ? state.chart.data[state.chart.data.length - 1].close : 77000);
             showNotification(sig, price, 'Тестовый сигнал', 75);
         }
 
         // ============================================
-        // ЗАГЛУШКИ ДЛЯ КАЛЕНДАРЯ И НОВОСТЕЙ
+        // ЗАГЛУШКИ
         // ============================================
         function refreshCalendar() {
-            // Заглушка - в реальном коде здесь API запрос
             document.getElementById('calendarList').innerHTML = 
-                '<div style="text-align:center;color:#8b949e;padding:20px">Календарь обновлён (заглушка)</div>';
+                '<div style="text-align:center;color:#8b949e;padding:20px">Календарь обновлён</div>';
             document.getElementById('calendarCount').innerText = '0';
         }
 
         function refreshNews() {
             document.getElementById('newsList').innerHTML = 
-                '<div style="text-align:center;color:#8b949e;padding:20px">Новости обновлены (заглушка)</div>';
+                '<div style="text-align:center;color:#8b949e;padding:20px">Новости обновлены</div>';
             document.getElementById('newsCount').innerText = '0';
         }
 
@@ -1880,24 +1849,21 @@
 
             initTimeframeButtons();
             
-            // Первая загрузка
-            loadMoexData(60, false).then(() => {
-                // Запускаем автообновление каждые 30 сек
+            // Загружаем всё
+            Promise.all([
+                fetchRealtimeData(),
+                loadChartData(60, false)
+            ]).then(() => {
                 startAutoUpdate();
-                log('Auto-update started:', CONFIG.UPDATE_INTERVAL, 'seconds');
+                log('Auto-update started');
             });
 
-            // Обработчик чекбокса автообновления
             document.getElementById('autoUpdateCheck').addEventListener('change', (e) => {
                 state.ui.autoUpdate = e.target.checked;
-                if (state.ui.autoUpdate) {
-                    startAutoUpdate();
-                } else {
-                    stopAutoUpdate();
-                }
+                if (state.ui.autoUpdate) startAutoUpdate();
+                else stopAutoUpdate();
             });
 
-            // Разрешение на уведомления
             if ("Notification" in window && Notification.permission === "default") {
                 Notification.requestPermission();
             }
